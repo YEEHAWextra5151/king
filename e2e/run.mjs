@@ -731,6 +731,7 @@ const scenarios = {
     await page.waitForSelector(".banner");
     check("reload: removed banner", (await page.textContent(".banner")).includes("moved or deleted"));
     check("reload: content kept after removal", await page.$(`${activeBody} #user-content-inserted-section`));
+    await page.waitForTimeout(300); // banner fade-in
     await shot(page, "removed-banner");
     await s.finish("reload");
 

@@ -19,11 +19,13 @@ run. Everything else was exercised in three ways:
   reload, session restore, and timing from the app's own `perf:` log. (Under
   Xvfb with software GL only the first window's web view paints; second
   windows and Settings were checked through their titles, geometry and the
-  log, and in the e2e harness.) Running the real app found four bugs the
+  log, and in the e2e harness.) Running the real app found six bugs the
   mocked harness couldn't: hidden windows waiting for animation frames that
   never come (every launch fell back to a 1.5 s timer), jumps requested
-  while hidden being undone, new windows never cascading, and background
-  tabs delaying the one on screen.
+  while hidden being undone, new windows never cascading, background tabs
+  delaying the one on screen, "Open files in: new windows" piling files
+  into one window, and the missing-files notice disappearing when a
+  restored window had nothing left.
 
 Legend: ✅ verified · 🍎 implemented, needs a Mac to verify · ⚠️ partial ·
 ⏭ follow-up.
