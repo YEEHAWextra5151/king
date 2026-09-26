@@ -1,4 +1,8 @@
-// First: start the render worker before the rest of the app is evaluated.
+/*
+ * The entry chunk is deliberately tiny: it starts the render worker, applies
+ * the theme to <html> before first paint, and only then loads the app, so
+ * the worker boots in parallel with React instead of after it.
+ */
 import "./render/prestart";
 import "./styles/tokens.css";
 import "./styles/themes.css";
@@ -6,28 +10,10 @@ import "./styles/chrome.css";
 import "./styles/document.css";
 import "./styles/code.css";
 import "./styles/print.css";
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { DocumentWindow } from "./app/DocumentWindow";
 import { applyChromeMetrics, applySettings, boot } from "./boot";
 
 applyChromeMetrics();
 applySettings(boot.settings, boot.customThemeCss);
 
-const root = createRoot(document.getElementById("root")!);
-
-if (boot.kind === "settings") {
-  void import("./settings/SettingsApp").then(({ SettingsApp }) =>
-    root.render(
-      <StrictMode>
-        <SettingsApp />
-      </StrictMode>,
-    ),
-  );
-} else {
-  root.render(
-    <StrictMode>
-      <DocumentWindow />
-    </StrictMode>,
-  );
-}
+if (boot.kind === "settings") void import("./settings/start");
+else void import("./app/start");
