@@ -205,6 +205,12 @@ pub fn create_document_window_at(
     requests: Vec<OpenRequest>,
     frame: Option<Frame>,
 ) -> Option<String> {
+    // Placement comes first: once registered, the new window is the
+    // frontmost one, and cascading needs the previous frontmost window.
+    let placement = match frame {
+        Some(f) => Some((f.x, f.y, f.width, f.height)),
+        None => cascade_frame(app),
+    };
     let label = next_label();
     let queue = app.state::<OpenQueue>();
     queue.set_init(&label, init);
@@ -215,10 +221,6 @@ pub fn create_document_window_at(
     let (w, h) = settings
         .last_window_size
         .unwrap_or((DEFAULT_WIDTH, DEFAULT_HEIGHT));
-    let placement = match frame {
-        Some(f) => Some((f.x, f.y, f.width, f.height)),
-        None => cascade_frame(app),
-    };
 
     let dev = dev_origin(app);
     let nav_app = app.clone();

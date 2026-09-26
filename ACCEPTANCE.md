@@ -16,7 +16,14 @@ run. Everything else was exercised in three ways:
 - **The real app** — the Tauri build for Linux (same Rust and frontend; the
   macOS glue swapped for no-op fallbacks) running in WebKitGTK under Xvfb,
   driven with xdotool: files, folders, deep links, menus and shortcuts, live
-  reload, session restore, and timing from the app's own `perf:` log.
+  reload, session restore, and timing from the app's own `perf:` log. (Under
+  Xvfb with software GL only the first window's web view paints; second
+  windows and Settings were checked through their titles, geometry and the
+  log, and in the e2e harness.) Running the real app found four bugs the
+  mocked harness couldn't: hidden windows waiting for animation frames that
+  never come (every launch fell back to a 1.5 s timer), jumps requested
+  while hidden being undone, new windows never cascading, and background
+  tabs delaying the one on screen.
 
 Legend: ✅ verified · 🍎 implemented, needs a Mac to verify · ⚠️ partial ·
 ⏭ follow-up.
@@ -84,7 +91,7 @@ Legend: ✅ verified · 🍎 implemented, needs a Mac to verify · ⚠️ partia
 | Requirement | Status | Evidence |
 |---|---|---|
 | One webview per window, tabs are app state, no native tabbing | ✅ 🍎 | Architecture; `NSWindow.allowsAutomaticWindowTabbing = NO` at launch (macOS). |
-| ⌘N cascaded windows ~920×820, min 520×400, frames remembered | ✅ 🍎 | Config + `cascade_frame`; frames saved in the session (real app). |
+| ⌘N cascaded windows ~920×820, min 520×400, frames remembered | ✅ | Real app: ⌘N opens a 920×820 window offset from the frontmost one; frames saved in the session. |
 | Tab bar in the unified title-bar row; active tab's surface flows into the document | ✅ | Screenshots. Traffic-light inset is computed from AppKit metrics 🍎. |
 | Close button on hover; middle-click closes; drag to reorder; overflow scroll + chevron menu | ✅ | e2e `tabs`, `manytabs`. |
 | Disambiguation "README.md — api" | ✅ | e2e `tabs`; real app. |
