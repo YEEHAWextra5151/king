@@ -138,12 +138,16 @@ fn deliver(app: &AppHandle, requests: Vec<OpenRequest>, opts: &OpenOptions) {
         return;
     }
     if separate_windows {
+        // Only the first file may reuse an empty (Welcome-only) frontmost
+        // window; decided up front, because windows created in this loop
+        // look empty until their frontends report.
+        let mut reusable = registry.frontmost().filter(|l| window_is_empty(app, l));
         for req in requests {
-            // Reuse an empty (Welcome-only) frontmost window for the first one.
-            if let Some(label) = registry.frontmost().filter(|l| window_is_empty(app, l)) {
-                push_to_window(app, &label, vec![req]);
-            } else {
-                windows::create_document_window(app, WindowInit::default(), vec![req]);
+            match reusable.take() {
+                Some(label) => push_to_window(app, &label, vec![req]),
+                None => {
+                    windows::create_document_window(app, WindowInit::default(), vec![req]);
+                }
             }
         }
         return;

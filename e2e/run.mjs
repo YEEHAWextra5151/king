@@ -270,7 +270,9 @@ const scenarios = {
     const titles = await tabTitles(page);
     check("tabs: three tabs", titles.length === 3, JSON.stringify(titles));
     check("tabs: disambiguation", titles[0] === "README.md — sample" && titles[1] === "README.md — api", JSON.stringify(titles));
-    check("tabs: last opened is active", (await activeTitle(page)) === "guide.md");
+    check("tabs: first of a batch is active", (await activeTitle(page)).startsWith("README.md — sample"));
+    await page.click(".tab >> nth=2");
+    await frames(page);
     await shot(page, "tabs");
 
     // Dedupe: opening an open file focuses its tab.

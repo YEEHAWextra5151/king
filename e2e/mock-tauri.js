@@ -118,7 +118,11 @@
     take_window_init: () =>
       Object.assign({ tabs: [], activeTabId: null, folder: null, sidebar: null, notices: [], showDefaultAppBanner: false }, scenario.init),
     take_pending_opens: () => {
-      const out = pending.map((p) => (typeof p === "string" ? request(p) : request(p.path, p)));
+      // Like router.rs: in one batch, only the first file is activated.
+      const out = pending.map((p, i) => {
+        const d = typeof p === "string" ? { path: p } : p;
+        return request(d.path, Object.assign({}, d, { activate: i === 0 }));
+      });
       pending = [];
       for (const r of out) {
         if (r.kind === "folder" && !r.readme) r.readme = readmeOf(r.path);
@@ -175,12 +179,12 @@
     image_data_urls: ({ paths }) => Object.fromEntries(paths.map((p) => [p, "data:image/svg+xml;base64,PHN2Zy8+"])),
     list_folder: ({ root }) => tree(root),
     open_granted: ({ path, newWindow, view }) => {
-      pending.push(request(path, { view }));
+      pending.push({ path, view });
       setTimeout(() => emit("documents-opened", {}), 0);
       return null;
     },
     open_dropped: ({ paths, insertAt }) => {
-      paths.forEach((p, i) => pending.push(request(p, { insertAt: insertAt == null ? null : insertAt + i })));
+      paths.forEach((p, i) => pending.push({ path: p, insertAt: insertAt == null ? null : insertAt + i }));
       setTimeout(() => emit("documents-opened", {}), 0);
       return null;
     },
@@ -302,7 +306,7 @@
     ready: false,
     emit,
     open(paths, extra) {
-      for (const p of paths) pending.push(request(p, extra));
+      for (const p of paths) pending.push(Object.assign({ path: p }, extra));
       emit("documents-opened", {});
     },
     change(path, text) {

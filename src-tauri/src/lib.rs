@@ -359,9 +359,10 @@ fn on_run_event(app: &AppHandle, event: RunEvent) {
             }
         }
         RunEvent::ExitRequested { code, api, .. } => {
-            // Closing the last window keeps Folio running (like Preview).
-            // Quit (⌘Q) and `app.exit()` pass through.
-            if code.is_none() && !app.state::<SessionState>().is_quitting() {
+            // On macOS, closing the last window keeps Folio running (like
+            // Preview); Quit (⌘Q) and `app.exit()` pass through. Elsewhere
+            // there's no Dock icon to come back through, so it exits.
+            if cfg!(target_os = "macos") && code.is_none() && !app.state::<SessionState>().is_quitting() {
                 api.prevent_exit();
             }
         }
