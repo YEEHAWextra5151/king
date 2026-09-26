@@ -11,6 +11,7 @@
     "allow-window-ready",
     "allow-registry-update",
     "allow-perf-mark",
+    "allow-frontend-log",
     "allow-toolbar-double-click",
     "allow-start-window-drag",
     "allow-close-window",

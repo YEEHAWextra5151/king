@@ -119,12 +119,16 @@ export class CodeViewController implements FindTarget {
   private wrap = new Compartment();
   private language = new Compartment();
   private editable = new Compartment();
-  private programmaticUntil = 0;
+  /** Line of the last programmatic scroll, until the reader scrolls. */
+  private target: number | null = null;
+  private userIntentAt = 0;
+  private softWrap: boolean;
   private frame = 0;
   private query = "";
   private current = -1;
 
   constructor(host: HTMLElement, private readonly options: CodeViewOptions) {
+    this.softWrap = options.softWrap;
     const extensions: Extension[] = [
       lineNumbers(),
       foldGutter({ openText: "⌄", closedText: "›" }),
@@ -152,6 +156,9 @@ export class CodeViewController implements FindTarget {
       state: EditorState.create({ doc: options.text, extensions }),
     });
     this.view.scrollDOM.addEventListener("scroll", this.onScroll, { passive: true });
+    for (const type of ["wheel", "touchstart", "keydown", "pointerdown"]) {
+      this.view.scrollDOM.addEventListener(type, this.onUserIntent, { passive: true });
+    }
     void this.loadLanguage();
   }
 
@@ -189,9 +196,12 @@ export class CodeViewController implements FindTarget {
   }
 
   setSoftWrap(on: boolean) {
-    const line = this.topLine();
+    if (on === this.softWrap) return;
+    this.softWrap = on;
+    // Keep the same line at the top (a pending jump wins over where it is now).
+    const line = this.target ?? this.topLine();
     this.view.dispatch({ effects: this.wrap.reconfigure(on ? EditorView.lineWrapping : []) });
-    requestAnimationFrame(() => this.scrollToLine(line));
+    this.scrollToLine(line);
   }
 
   /** Fractional 0-based source line at the top of the viewport. */
@@ -205,19 +215,23 @@ export class CodeViewController implements FindTarget {
     return number + fraction;
   }
 
+  /**
+   * Scrolls `line` (fractional, 0-based) to the top. CodeMirror places it
+   * during its next measure, so this is exact even before the view has been
+   * measured (a hidden window, a far-away line with estimated heights).
+   */
   scrollToLine(line: number, options: { select?: boolean; flash?: boolean } = {}) {
     const view = this.view;
     const doc = view.state.doc;
     const whole = Math.min(Math.max(Math.floor(line), 0), doc.lines - 1);
-    const fraction = line - whole;
+    const fraction = Math.min(Math.max(line - whole, 0), 1);
     const target = doc.line(whole + 1);
-    const block = view.lineBlockAt(target.from);
-    const docTopInScroll = view.documentTop - view.scrollDOM.getBoundingClientRect().top + view.scrollDOM.scrollTop;
-    this.programmaticUntil = performance.now() + 120;
-    view.scrollDOM.scrollTop = Math.max(0, docTopInScroll + block.top + fraction * block.height);
-    if (options.select) {
-      view.dispatch({ selection: { anchor: target.from } });
-    }
+    const height = view.lineBlockAt(target.from).height;
+    this.target = whole + fraction;
+    view.dispatch({
+      selection: options.select ? { anchor: target.from } : undefined,
+      effects: EditorView.scrollIntoView(target.from, { y: "start", yMargin: -fraction * height }),
+    });
     if (options.flash) {
       requestAnimationFrame(() => {
         const dom = view.domAtPos(target.from).node;
@@ -251,13 +265,24 @@ export class CodeViewController implements FindTarget {
     return this.view.state.sliceDoc(from, to);
   }
 
+  private onUserIntent = () => {
+    this.userIntentAt = performance.now();
+    this.target = null;
+  };
+
   private onScroll = () => {
     if (this.frame) return;
     this.frame = requestAnimationFrame(() => {
       this.frame = 0;
       const el = this.view.scrollDOM;
       const atEnd = el.scrollTop > 0 && el.scrollHeight > el.clientHeight + 2 && el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
-      this.options.onScrollLine(this.topLine(), performance.now() > this.programmaticUntil, atEnd);
+      const top = this.topLine();
+      // Ours if it landed where we asked (it may land late: CodeMirror scrolls
+      // in its measure cycle, which waits while the window is hidden).
+      const intent = performance.now() - this.userIntentAt < 800;
+      const programmatic = !intent && this.target !== null && (Math.abs(top - this.target) < 0.75 || atEnd);
+      if (!programmatic) this.target = null;
+      this.options.onScrollLine(top, !programmatic, atEnd);
     });
   };
 

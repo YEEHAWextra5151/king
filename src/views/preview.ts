@@ -75,6 +75,8 @@ export class PreviewController {
   private disposeHighlight: (() => void) | null = null;
   private highlightPath: string | null = null;
   private programmaticUntil = 0;
+  /** Line of the last programmatic scroll, until the reader scrolls. */
+  private target: number | null = null;
   private userScrolledAt = 0;
   private frame = 0;
   private stickUntil = 0;
@@ -312,6 +314,7 @@ export class PreviewController {
   scrollToLine(line: number, options: { stick?: boolean } = {}) {
     const y = offsetForLine(this.lineEntries(), this.scroller, line);
     this.programmaticUntil = performance.now() + 120;
+    this.target = line;
     this.scroller.scrollTop = Math.max(0, y);
     if (options.stick) {
       // Images above may still load and push content down: hold the line
@@ -338,6 +341,7 @@ export class PreviewController {
         this.programmaticUntil = performance.now() + 120;
         this.scroller.scrollTop = Math.max(0, top - 16);
         this.stickLine = this.topLine();
+        this.target = this.stickLine;
         this.stickUntil = performance.now() + 1500;
         return true;
       }
@@ -347,6 +351,7 @@ export class PreviewController {
 
   scrollToTop() {
     this.programmaticUntil = performance.now() + 120;
+    this.target = 0;
     this.scroller.scrollTop = 0;
   }
 
@@ -354,6 +359,7 @@ export class PreviewController {
   scrollToLineSync(line: number) {
     const y = offsetForLine(this.lineEntries(), this.scroller, line);
     this.programmaticUntil = performance.now() + 120;
+    this.target = line;
     this.scroller.scrollTop = Math.max(0, y);
   }
 
@@ -373,16 +379,24 @@ export class PreviewController {
   private onUserIntent = () => {
     this.userScrolledAt = performance.now();
     this.stickLine = null;
+    this.target = null;
   };
 
   private onScroll = () => {
     if (this.frame) return;
     this.frame = requestAnimationFrame(() => {
       this.frame = 0;
-      const byUser = performance.now() > this.programmaticUntil;
       const el = this.scroller;
       const atEnd = el.scrollTop > 0 && el.scrollHeight > el.clientHeight + 2 && el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
-      this.cb.onScrollLine(this.topLine(), byUser, atEnd);
+      const top = this.topLine();
+      // Ours if it's recent or landed where we asked (scroll events are
+      // late while the window is hidden); a reader's input always wins.
+      const now = performance.now();
+      const intent = now - this.userScrolledAt < 800;
+      const programmatic =
+        !intent && (now < this.programmaticUntil || (this.target !== null && (Math.abs(top - this.target) < 0.75 || atEnd)));
+      if (!programmatic) this.target = null;
+      this.cb.onScrollLine(top, !programmatic, atEnd);
     });
   };
 

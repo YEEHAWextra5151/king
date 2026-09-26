@@ -4,6 +4,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ipc, on } from "../ipc";
 import type { CustomTheme, DefaultAppStatus, EditorInfo, Settings } from "../ipc/types";
 import { useSettings } from "../store/settings";
+import { reportReady } from "../app/firstPaint";
 
 type Pane = "general" | "appearance" | "reading" | "advanced";
 
@@ -78,7 +79,7 @@ export function SettingsApp() {
   }, [pane]);
 
   useEffect(() => {
-    requestAnimationFrame(() => requestAnimationFrame(() => void ipc.windowReady()));
+    reportReady(() => void ipc.windowReady());
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey && e.key === "w") {
         e.preventDefault();

@@ -106,6 +106,7 @@ pub fn run() {
             commands::window_ready,
             commands::registry_update,
             commands::perf_mark,
+            commands::frontend_log,
             commands::toolbar_double_click,
             commands::start_window_drag,
             commands::close_window,

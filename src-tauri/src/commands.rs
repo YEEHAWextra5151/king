@@ -62,6 +62,7 @@ pub fn take_pending_opens(app: AppHandle, window: WebviewWindow) -> Vec<OpenRequ
 
 #[tauri::command]
 pub fn window_ready(app: AppHandle, window: WebviewWindow) {
+    perf::mark(&app, &format!("window-ready {}", window.label()));
     windows::reveal(&window);
     perf::mark(&app, &format!("window-shown {}", window.label()));
 }
@@ -88,6 +89,27 @@ pub fn registry_update(app: AppHandle, window: WebviewWindow, snapshot: WindowSn
 #[tauri::command]
 pub fn perf_mark(app: AppHandle, name: String) {
     perf::mark(&app, &name);
+}
+
+/// Frontend errors and warnings, written to Folio's local log (Help ▸ Show
+/// Logs). Nothing leaves the machine.
+#[tauri::command]
+pub fn frontend_log(window: WebviewWindow, level: String, message: String) {
+    let mut message = message;
+    if message.len() > 4000 {
+        let mut end = 4000;
+        while !message.is_char_boundary(end) {
+            end -= 1;
+        }
+        message.truncate(end);
+        message.push('…');
+    }
+    let label = window.label();
+    match level.as_str() {
+        "error" => log::error!("[{label}] {message}"),
+        "warn" => log::warn!("[{label}] {message}"),
+        _ => log::info!("[{label}] {message}"),
+    }
 }
 
 #[tauri::command]

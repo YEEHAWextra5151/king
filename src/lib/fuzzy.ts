@@ -54,10 +54,14 @@ function align(q: string, t: string, original: string, start: number): FuzzyMatc
   return { score, indices };
 }
 
-/** Scores a path, weighting matches in the file name above the folders. */
+/**
+ * Scores a file: its name first. Folders are searched only when the query
+ * asks for them ("docs/gui"); otherwise long paths match almost anything.
+ */
 export function fuzzyPath(query: string, name: string, path: string): FuzzyMatch | null {
   const nameMatch = fuzzyMatch(query, name);
   if (nameMatch) return { score: nameMatch.score * 2 + 10, indices: nameMatch.indices };
+  if (!query.includes("/")) return null;
   const pathMatch = fuzzyMatch(query, path);
   return pathMatch ? { score: pathMatch.score, indices: [] } : null;
 }

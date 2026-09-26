@@ -24,7 +24,7 @@ import {
 import { TabView } from "../views/TabView";
 import { runMenuAction } from "./actions";
 import { findController, useFind } from "./findController";
-import { onFirstPaint } from "./firstPaint";
+import { layoutMs, onFirstPaint, reportReady } from "./firstPaint";
 import { panes } from "./panes";
 
 const MOUNTED_TABS = 5;
@@ -128,7 +128,10 @@ export function DocumentWindow() {
     const show = () => {
       if (shown) return;
       shown = true;
-      requestAnimationFrame(() => requestAnimationFrame(() => void ipc.windowReady()));
+      reportReady(() => {
+        void ipc.windowReady();
+        if (layoutMs !== null) void ipc.perfMark(`first-layout ${layoutMs.toFixed(0)}ms`);
+      });
     };
     onFirstPaint(show);
     const fallback = window.setTimeout(show, 900);

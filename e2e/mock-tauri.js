@@ -228,6 +228,7 @@
     make_default_app: () => ({ supported: true, isDefault: true, types: [] }),
     dismiss_default_app_banner: () => null,
     install_cli: () => ({ ok: true, path: "/usr/local/bin/folio", message: "The folio command is installed." }),
+    frontend_log: () => null,
     perf_mark: ({ name }) => {
       window.__mock.marks.push([name, performance.now()]);
       return null;

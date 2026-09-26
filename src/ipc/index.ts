@@ -38,6 +38,7 @@ export const ipc = {
   windowReady: () => invoke<void>("window_ready"),
   registryUpdate: (snapshot: WindowSnapshot) => invoke<void>("registry_update", { snapshot }),
   perfMark: (name: string) => invoke<void>("perf_mark", { name }),
+  log: (level: "error" | "warn" | "info", message: string) => invoke<void>("frontend_log", { level, message }),
   toolbarDoubleClick: () => invoke<void>("toolbar_double_click"),
   startWindowDrag: () => invoke<void>("start_window_drag"),
   closeWindow: () => invoke<void>("close_window"),

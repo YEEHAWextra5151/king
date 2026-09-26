@@ -9,6 +9,7 @@
     "core:window:allow-set-title",
     "allow-take-window-init",
     "allow-window-ready",
+    "allow-frontend-log",
     "allow-close-window",
     "allow-get-settings",
     "allow-update-settings",

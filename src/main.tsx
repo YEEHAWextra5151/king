@@ -11,7 +11,9 @@ import "./styles/document.css";
 import "./styles/code.css";
 import "./styles/print.css";
 import { applyChromeMetrics, applySettings, boot } from "./boot";
+import { installErrorLog } from "./lib/errorLog";
 
+installErrorLog();
 applyChromeMetrics();
 applySettings(boot.settings, boot.customThemeCss);
 

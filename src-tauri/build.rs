@@ -6,6 +6,7 @@ const COMMANDS: &[&str] = &[
     "window_ready",
     "registry_update",
     "perf_mark",
+    "frontend_log",
     "toolbar_double_click",
     "start_window_drag",
     "close_window",
