@@ -183,34 +183,55 @@ pub fn resolve_link(app: AppHandle, from: String, href: String, root: Option<Str
     access.resolve_link(&from, &href, root.as_deref())
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GrantedImage {
+    pub path: String,
+    /// Intrinsic size, when cheaply known, so the page can reserve space
+    /// before the image loads (no layout shift).
+    pub width: Option<usize>,
+    pub height: Option<usize>,
+}
+
 /// Grants each local image a document references, file by file, to the
-/// asset protocol. Returns src → canonical path (null if not an image).
+/// asset protocol. Returns src → granted image (null if not a local image).
 #[tauri::command]
-pub fn allow_images(
+pub async fn allow_images(
     app: AppHandle,
     doc: String,
     srcs: Vec<String>,
     root: Option<String>,
-) -> HashMap<String, Option<String>> {
-    let access = app.state::<Access>();
-    let doc = PathBuf::from(doc);
-    let mut out = HashMap::new();
-    if !access.can_read(&doc) {
-        return out;
-    }
-    let root = root.map(PathBuf::from).filter(|r| access.can_list(r));
-    let scope = app.asset_protocol_scope();
-    for src in srcs.into_iter().take(5000) {
-        let resolved = access.resolve_image(&doc, &src, root.as_deref());
-        if let Some(img) = &resolved {
-            if let Err(err) = scope.allow_file(img) {
-                log::warn!("asset scope: {err}");
-            }
-            access.note_image(img);
+) -> HashMap<String, Option<GrantedImage>> {
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let access = handle.state::<Access>();
+        let doc = PathBuf::from(doc);
+        let mut out = HashMap::new();
+        if !access.can_read(&doc) {
+            return out;
         }
-        out.insert(src, resolved.map(|p| paths::to_string(&p)));
-    }
-    out
+        let root = root.map(PathBuf::from).filter(|r| access.can_list(r));
+        let scope = handle.asset_protocol_scope();
+        for src in srcs.into_iter().take(5000) {
+            let resolved = access.resolve_image(&doc, &src, root.as_deref());
+            let granted = resolved.map(|img| {
+                if let Err(err) = scope.allow_file(&img) {
+                    log::warn!("asset scope: {err}");
+                }
+                access.note_image(&img);
+                let size = imagesize::size(&img).ok();
+                GrantedImage {
+                    path: paths::to_string(&img),
+                    width: size.map(|s| s.width),
+                    height: size.map(|s| s.height),
+                }
+            });
+            out.insert(src, granted);
+        }
+        out
+    })
+    .await
+    .unwrap_or_default()
 }
 
 /// Data URLs for images already granted (Export ▸ HTML inlines them).
