@@ -1,0 +1,5 @@
+Release notes
+=============
+
+0.1.0  First release.
+       Read-only Markdown viewing, tabs, live reload.

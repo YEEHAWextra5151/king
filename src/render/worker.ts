@@ -3,7 +3,7 @@
  * Requests for the same document supersede each other; errors stay
  * contained to the request (and so to its tab).
  */
-import { highlightPending, renderDocument, warm } from "./renderer";
+import { highlightPending, renderDocument, warm, warmParser } from "./renderer";
 import type { WorkerRequest, WorkerResponse } from "./types";
 
 const scope = self as unknown as {
@@ -39,8 +39,19 @@ async function handleRender(req: Extract<WorkerRequest, { type: "render" }>) {
   }
 }
 
+let requested = false;
+
 scope.onmessage = (event: MessageEvent<WorkerRequest>) => {
   const req = event.data;
-  if (req.type === "render") void handleRender(req);
-  else if (req.type === "warm") void warm(req.langs);
+  if (req.type === "render") {
+    requested = true;
+    void handleRender(req);
+  } else if (req.type === "warm") {
+    void warm(req.langs);
+  }
 };
+
+// Idle until the first document arrives: compile the parser's code paths.
+setTimeout(() => {
+  if (!requested) warmParser();
+}, 0);

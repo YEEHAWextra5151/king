@@ -143,8 +143,10 @@ function OpenQuicklyPanel() {
                 <span className="text">
                   <span className="name">{highlight(r.name, r.indices)}</span>
                   <span className="detail">
-                    {r.source === "tab" ? "Open · " : r.source === "recent" ? "Recent · " : ""}
-                    {tildify(dirname(r.path))}
+                    <bdi dir="ltr">
+                      {r.source === "tab" ? "Open · " : r.source === "recent" ? "Recent · " : ""}
+                      {tildify(dirname(r.path))}
+                    </bdi>
                   </span>
                 </span>
               </div>

@@ -20,16 +20,12 @@ import { observeMermaid } from "../render/mermaid";
 import { sanitizeDocument, type GrantedImage } from "../render/sanitize";
 import type { Heading, RenderOptions, RenderOutput } from "../render/types";
 import { DomFinder } from "./find";
+import { loadKatexCss } from "./katexStyles";
 
-let katexCss: Promise<unknown> | null = null;
-function loadKatexCss() {
-  katexCss ??= import("./katexCss");
-  return katexCss;
-}
 
 export interface PreviewCallbacks {
   /** Top-of-viewport source line changed (throttled to a frame). */
-  onScrollLine(line: number, byUser: boolean): void;
+  onScrollLine(line: number, byUser: boolean, atEnd: boolean): void;
   onRendered(output: RenderOutput, initial: boolean): void;
   onError(error: Error): void;
   onLink(anchor: HTMLAnchorElement, event: MouseEvent): void;
@@ -47,6 +43,15 @@ export interface RenderRequest {
   folderRoot: string | null;
   /** Tint changed blocks (live reload with the setting on). */
   tint: boolean;
+}
+
+interface ScrollAnchor {
+  atTop: boolean;
+  atBottom: boolean;
+  line: number;
+  block: HTMLElement | null;
+  offset: number;
+  before: (readonly [Element, number])[];
 }
 
 export interface CachedPreview {
@@ -148,7 +153,7 @@ export class PreviewController {
       assetUrl,
     });
     const initial = pathChanged || this.article.childElementCount === 0;
-    const anchor = initial ? null : this.topLine();
+    const anchor = initial ? null : this.captureAnchor();
     if (initial) this.article.replaceChildren();
     commitBlocks(this.article, fragment, hashes, { tint: !initial && req.tint });
     this.entries = null;
@@ -159,8 +164,72 @@ export class PreviewController {
     this.watchHighlights(req.path);
     this.disposeMermaid?.();
     this.disposeMermaid = output.hasMermaid ? observeMermaid(this.article, this.scroller) : null;
-    if (anchor !== null) this.scrollToLine(anchor);
+    if (anchor) this.restoreAnchor(anchor);
     this.cb.onRendered(output, initial);
+  }
+
+  /**
+   * Where the reader is, before a live reload replaces blocks: the block at
+   * the top of the viewport (pinned by DOM identity when the diff keeps it),
+   * plus the source line and the old lines of the blocks above it, so an
+   * edited block still maps to the right line after edits above it.
+   */
+  private captureAnchor(): ScrollAnchor {
+    const el = this.scroller;
+    const blocks = Array.from(this.article.children) as HTMLElement[];
+    const viewTop = el.getBoundingClientRect().top;
+    // First top-level block whose bottom is below the viewport top.
+    let lo = 0;
+    let hi = blocks.length - 1;
+    let index = blocks.length;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (blocks[mid].getBoundingClientRect().bottom > viewTop + 0.5) {
+        index = mid;
+        hi = mid - 1;
+      } else {
+        lo = mid + 1;
+      }
+    }
+    const block = blocks[index] ?? null;
+    return {
+      atTop: el.scrollTop <= 1,
+      atBottom: el.scrollTop > 1 && el.scrollTop + el.clientHeight >= el.scrollHeight - 2,
+      line: this.topLine(),
+      block,
+      offset: block ? block.getBoundingClientRect().top - viewTop : 0,
+      before: blocks.slice(Math.max(0, index - 50), index + 1).map((b) => [b, Number(b.dataset.sourceLine)] as const),
+    };
+  }
+
+  private restoreAnchor(anchor: ScrollAnchor) {
+    const el = this.scroller;
+    this.programmaticUntil = performance.now() + 120;
+    if (anchor.atTop) {
+      el.scrollTop = 0;
+      return;
+    }
+    if (anchor.atBottom) {
+      el.scrollTop = el.scrollHeight;
+      return;
+    }
+    const block = anchor.block;
+    if (block && block.parentElement === this.article) {
+      const now = block.getBoundingClientRect().top - el.getBoundingClientRect().top;
+      el.scrollTop += now - anchor.offset;
+      return;
+    }
+    // The block at the top changed: shift the line by however far the
+    // nearest surviving block above it moved.
+    let delta = 0;
+    for (let i = anchor.before.length - 1; i >= 0; i--) {
+      const [prev, oldLine] = anchor.before[i];
+      if (prev.parentElement !== this.article || !Number.isFinite(oldLine)) continue;
+      const newLine = Number((prev as HTMLElement).dataset.sourceLine);
+      if (Number.isFinite(newLine)) delta = newLine - oldLine;
+      break;
+    }
+    this.scrollToLine(Math.max(0, anchor.line + delta));
   }
 
   /** Rebuilds from cached HTML (tabs outside the mounted set). */
@@ -311,7 +380,9 @@ export class PreviewController {
     this.frame = requestAnimationFrame(() => {
       this.frame = 0;
       const byUser = performance.now() > this.programmaticUntil;
-      this.cb.onScrollLine(this.topLine(), byUser);
+      const el = this.scroller;
+      const atEnd = el.scrollTop > 0 && el.scrollHeight > el.clientHeight + 2 && el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
+      this.cb.onScrollLine(this.topLine(), byUser, atEnd);
     });
   };
 

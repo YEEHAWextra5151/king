@@ -21,6 +21,9 @@
   --hairline: rgba(31, 30, 29, 0.15);
   --hairline-strong: rgba(31, 30, 29, 0.3);
   --accent: #d97757;
+  /* Filled controls carrying white text (primary buttons, selected rows):
+     white on --accent is only 3.1:1, on this deeper terracotta 5:1. */
+  --accent-fill: #b4532f;
   --accent-contrast: #ffffff;
   --link: #b4532f;
   --selection: rgba(217, 119, 87, 0.25);

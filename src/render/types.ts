@@ -53,7 +53,8 @@ export interface RenderOutput {
   hasMermaid: boolean;
   hasMath: boolean;
   stats: DocumentStats;
-  timings: { parse: number; render: number; total: number };
+  /** Milliseconds; `start` is epoch time, for lining up with the main thread. */
+  timings: { parse: number; render: number; total: number; start: number };
 }
 
 export type WorkerRequest =

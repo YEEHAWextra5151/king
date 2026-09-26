@@ -3,20 +3,16 @@
  * fences a document uses, on the JavaScript regex engine (no WASM, so no
  * CSP relaxation). Colors are CSS variables (`var(--shiki-token-keyword)`),
  * so light/dark and theme switches never need a re-render.
+ *
+ * This module is the cheap half (language names, plain rendering); the
+ * highlighter itself lives in shikiCore.ts and is imported on first use.
  */
-import { createCssVariablesTheme, createHighlighterCoreSync, type HighlighterCore } from "shiki/core";
-import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import { bundledLanguages, bundledLanguagesInfo } from "shiki/langs";
 import { escapeHtml } from "./hash";
 
-const THEME = "folio";
+type ShikiCore = typeof import("./shikiCore");
 
-const theme = createCssVariablesTheme({
-  name: THEME,
-  variablePrefix: "--shiki-",
-  variableDefaults: {},
-  fontStyle: true,
-});
+const THEME = "folio";
 
 const aliases = new Map<string, string>();
 const names = new Map<string, string>();
@@ -46,17 +42,14 @@ const PLAIN = new Set(["", "text", "txt", "plain", "plaintext", "none", "nohighl
 /** Blocks larger than this aren't highlighted (tokenizing is superlinear). */
 export const MAX_HIGHLIGHT_CHARS = 150_000;
 
-let highlighter: HighlighterCore | null = null;
+let shiki: ShikiCore | null = null;
+let shikiLoading: Promise<ShikiCore> | null = null;
 const loaded = new Set<string>();
 const loading = new Map<string, Promise<void>>();
 
-function core(): HighlighterCore {
-  highlighter ??= createHighlighterCoreSync({
-    themes: [theme],
-    langs: [],
-    engine: createJavaScriptRegexEngine({ forgiving: true }),
-  });
-  return highlighter;
+function loadCore(): Promise<ShikiCore> {
+  shikiLoading ??= import("./shikiCore").then((mod) => (shiki = mod));
+  return shikiLoading;
 }
 
 /** Canonical Shiki id for a fence name, or null for plain text/unknown. */
@@ -85,8 +78,8 @@ export function ensureLangs(ids: string[]): Promise<void> {
     if (!task) {
       const importer = (bundledLanguages as Record<string, () => Promise<unknown>>)[id];
       task = importer
-        ? importer()
-            .then((mod) => core().loadLanguage((mod as { default: never }).default))
+        ? Promise.all([importer(), loadCore()])
+            .then(([mod, core]) => core.loadLanguage((mod as { default: never }).default))
             .then(() => {
               loaded.add(id);
             })
@@ -104,7 +97,8 @@ export function ensureLangs(ids: string[]): Promise<void> {
 
 /** Highlights `code` with a loaded grammar. Throws if tokenizing fails. */
 export function highlight(code: string, id: string): string {
-  return core().codeToHtml(code, { lang: id, theme: THEME });
+  if (!shiki) throw new Error("Shiki isn't loaded");
+  return shiki.highlight(code, id);
 }
 
 /** Same box as Shiki's output, so swapping in colors never shifts layout. */

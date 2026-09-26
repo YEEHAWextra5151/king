@@ -93,11 +93,11 @@ function DocumentTab({ tab, active }: { tab: Tab; active: boolean }) {
   }, [path]);
 
   // ─── Scroll bookkeeping ────────────────────────────────────────────────
-  const onScrollLine = useCallback((line: number, byUser: boolean, from: "preview" | "code") => {
+  const onScrollLine = useCallback((line: number, byUser: boolean, atEnd: boolean, from: "preview" | "code") => {
     const t = tabRef.current;
     window.clearTimeout(anchorTimer.current);
     anchorTimer.current = window.setTimeout(() => updateTab(t.id, { anchor: line }), 120);
-    setTabInfo(t.id, { currentLine: line });
+    setTabInfo(t.id, byUser ? { currentLine: line, atEnd, pinnedHeading: null } : { currentLine: line, atEnd });
     if (byUser && effectiveMode(t, entryRef.current) === "split") {
       if (from === "preview") code.current?.scrollToLine(line);
       else preview.current?.scrollToLineSync(line);
@@ -112,7 +112,7 @@ function DocumentTab({ tab, active }: { tab: Tab; active: boolean }) {
   useLayoutEffect(() => {
     if (!needsPreview || preview.current || !previewHost.current) return;
     preview.current = new PreviewController(previewHost.current, {
-      onScrollLine: (line, byUser) => onScrollLine(line, byUser, "preview"),
+      onScrollLine: (line, byUser, atEnd) => onScrollLine(line, byUser, atEnd, "preview"),
       onRendered: (output, initial) => {
         const t = tabRef.current;
         setTabInfo(t.id, { headings: output.headings, words: output.stats.words, lines: output.stats.lines });
@@ -198,7 +198,7 @@ function DocumentTab({ tab, active }: { tab: Tab; active: boolean }) {
         fileName: tabRef.current.title,
         isMarkdown: tabRef.current.kind === "markdown",
         softWrap: useSettings.getState().settings.softWrap,
-        onScrollLine: (line, byUser) => onScrollLine(line, byUser, "code"),
+        onScrollLine: (line, byUser, atEnd) => onScrollLine(line, byUser, atEnd, "code"),
       });
       code.current.scrollToLine(tabRef.current.anchor);
       setCodeReady(true);

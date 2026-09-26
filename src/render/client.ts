@@ -17,6 +17,8 @@ export class RenderClient {
   private nextId = 1;
   private pending = new Map<number, Pending>();
   private latestByKey = new Map<string, number>();
+  /** The latest request per key, so an identical request shares its result. */
+  private lastRequest = new Map<string, { text: string; options: string; promise: Promise<RenderOutput> }>();
   private highlightListeners = new Map<string, Set<HighlightListener>>();
 
   constructor() {
@@ -49,6 +51,9 @@ export class RenderClient {
    * supersedes older ones (they reject with `Superseded`).
    */
   render(key: string, text: string, options: RenderOptions): Promise<RenderOutput> {
+    const optionsKey = JSON.stringify(options);
+    const last = this.lastRequest.get(key);
+    if (last && last.text === text && last.options === optionsKey) return last.promise;
     const id = this.nextId++;
     const previous = this.latestByKey.get(key);
     if (previous !== undefined) {
@@ -59,11 +64,23 @@ export class RenderClient {
       }
     }
     this.latestByKey.set(key, id);
-    return new Promise((resolve, reject) => {
+    const promise = new Promise<RenderOutput>((resolve, reject) => {
       this.pending.set(id, { resolve, reject, key });
       const req: WorkerRequest = { type: "render", id, key, text, options };
       this.worker.postMessage(req);
     });
+    const entry = { text, options: optionsKey, promise };
+    this.lastRequest.set(key, entry);
+    // Failed renders aren't shared (Try Again must really try again).
+    promise.catch(() => {
+      if (this.lastRequest.get(key) === entry) this.lastRequest.delete(key);
+    });
+    return promise;
+  }
+
+  /** Forgets a document's last result (its tabs are gone). */
+  forget(key: string) {
+    this.lastRequest.delete(key);
   }
 
   onHighlight(key: string, listener: HighlightListener): () => void {

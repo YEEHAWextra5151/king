@@ -6,7 +6,7 @@ tags: [guide, docs]
 
 # User Guide
 
-Back to the [README](../README.md).
+Back to the [README](../README.md). The [release notes](../notes.txt) are plain text.
 
 ## Opening files
 

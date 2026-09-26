@@ -5,6 +5,9 @@
 import { create } from "zustand";
 import { ipc } from "../ipc";
 import type { DocErrorCode, DocumentPayload } from "../ipc/types";
+import { renderClient } from "../render/client";
+import { loadKatexCss, mayHaveMath } from "../views/katexStyles";
+import { getSettings } from "./settings";
 
 export interface DocEntry {
   path: string;
@@ -62,6 +65,14 @@ export function loadDocument(path: string, options: { asText?: boolean; reload?:
       const current = getDoc(path);
       if (result.status === "ready") {
         const { status: _status, ...payload } = result;
+        if (!current?.payload && payload.kind === "markdown" && !payload.large) {
+          // Start rendering now instead of when the view mounts; the view's
+          // identical request shares this one's result.
+          void renderClient()
+            .render(path, payload.text, { frontMatter: getSettings().frontMatter })
+            .catch(() => {});
+          if (mayHaveMath(payload.text)) void loadKatexCss();
+        }
         patch(path, {
           status: "ready",
           payload,
@@ -101,8 +112,12 @@ export function pruneDocs(inUse: Set<string>) {
   const next: Record<string, DocEntry> = {};
   let changed = false;
   for (const [path, entry] of Object.entries(entries)) {
-    if (inUse.has(path)) next[path] = entry;
-    else changed = true;
+    if (inUse.has(path)) {
+      next[path] = entry;
+    } else {
+      changed = true;
+      renderClient().forget(path);
+    }
   }
   if (changed) useDocs.setState({ entries: next });
 }

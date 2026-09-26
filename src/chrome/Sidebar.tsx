@@ -3,7 +3,7 @@ import { panes } from "../app/panes";
 import { ipc } from "../ipc";
 import type { FolderNode } from "../ipc/types";
 import { showContextMenu } from "../lib/contextMenu";
-import { setSidebar, useWorkspace } from "../store/workspace";
+import { setSidebar, setTabInfo, useWorkspace } from "../store/workspace";
 import { DisclosureIcon, FolderIcon, MarkdownDocIcon } from "./icons";
 
 export function Sidebar() {
@@ -60,10 +60,19 @@ function Outline() {
   const body = useRef<HTMLDivElement>(null);
   const minLevel = headings.reduce((m, h) => Math.min(m, h.level), 6);
 
-  let currentIndex = -1;
-  headings.forEach((h, i) => {
-    if (h.line <= currentLine + 0.6) currentIndex = i;
-  });
+  let currentIndex = info?.pinnedHeading != null ? headings.findIndex((h) => h.line === info.pinnedHeading) : -1;
+  if (currentIndex < 0) {
+    headings.forEach((h, i) => {
+      if (h.line <= currentLine + 0.6) currentIndex = i;
+    });
+    // At the end of the document the last sections can't scroll to the top.
+    if (info?.atEnd && headings.length) currentIndex = headings.length - 1;
+  }
+  const go = (line: number) => {
+    if (!activeId) return;
+    setTabInfo(activeId, { pinnedHeading: line });
+    panes.get(activeId)?.scrollToLine(line);
+  };
 
   useEffect(() => {
     body.current?.querySelector(".is-current")?.scrollIntoView({ block: "nearest" });
@@ -83,11 +92,11 @@ function Outline() {
           tabIndex={i === Math.max(currentIndex, 0) ? 0 : -1}
           className={`row outline-item level-${h.level - minLevel + 1}${i === currentIndex ? " is-current" : ""}`}
           style={{ paddingLeft: 8 + (h.level - minLevel) * 14 }}
-          onClick={() => activeId && panes.get(activeId)?.scrollToLine(h.line)}
+          onClick={() => go(h.line)}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              if (activeId) panes.get(activeId)?.scrollToLine(h.line);
+              go(h.line);
             } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
               e.preventDefault();
               const next = (e.currentTarget.parentElement?.children[i + (e.key === "ArrowDown" ? 1 : -1)] as HTMLElement | undefined);

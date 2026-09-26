@@ -7,6 +7,11 @@ import { fileURLToPath } from "node:url";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 const DIST = join(here, "..", "dist");
+const CONF = JSON.parse(await readFile(join(here, "..", "src-tauri", "tauri.conf.json"), "utf8"));
+/** The production CSP from tauri.conf.json, so violations fail the run. */
+export const CSP = Object.entries(CONF.app.security.csp)
+  .map(([directive, sources]) => `${directive} ${sources}`)
+  .join("; ");
 const FIXTURES = join(here, "fixtures", "project");
 const TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -32,11 +37,19 @@ export function serve(port = 0) {
         base = FIXTURES;
         path = path.slice("/__fixtures__".length);
       }
+      if (path === "/favicon.ico") {
+        // Browsers ask for one; WebKit in Tauri does not.
+        res.writeHead(204);
+        res.end();
+        return;
+      }
       if (path === "/" || path.endsWith("/")) path += "index.html";
       const file = normalize(join(base, path));
       if (!file.startsWith(base)) throw new Error("outside root");
       await stat(file);
-      res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream" });
+      const headers = { "content-type": TYPES[extname(file)] ?? "application/octet-stream" };
+      if (extname(file) === ".html") headers["content-security-policy"] = CSP;
+      res.writeHead(200, headers);
       res.end(await readFile(file));
     } catch {
       res.writeHead(404);

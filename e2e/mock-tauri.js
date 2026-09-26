@@ -150,7 +150,7 @@
         lineEnding: "lf",
         size: text.length,
         modifiedMs: Date.now() - 42 * 60000,
-        large: text.length > 10 * 1024 * 1024,
+        large: text.length > (scenario.largeBytes || 10 * 1024 * 1024),
       };
     },
     resolve_link: ({ from, href, root }) => {
@@ -256,6 +256,8 @@
 
   async function invoke(cmd, args) {
     calls.push([cmd, args]);
+    if (!window.__firstIpc) window.__firstIpc = performance.now();
+    if (cmd === "read_document" && !window.__readAt) window.__readAt = performance.now();
     const handler = handlers[cmd];
     if (!handler) {
       console.warn("[mock] unhandled command", cmd, args);

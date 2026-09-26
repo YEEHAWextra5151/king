@@ -113,3 +113,11 @@
 .settings input[type="range"] {
   width: 180px;
 }
+.form-note code {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: var(--recessed);
+  color: var(--text-secondary);
+}

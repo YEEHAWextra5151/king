@@ -51,6 +51,8 @@ export interface RenderResult {
 export async function renderDocument(text: string, options: RenderOptions): Promise<RenderResult> {
   const t0 = performance.now();
   md ??= createMarkdown();
+  // Fetch KaTeX while parsing when the source suggests math.
+  if (!katex && (text.includes("$") || text.includes("math"))) void loadKatex().catch(() => {});
   const key = nonce();
   const slots: Record<string, string> = {};
   const pending: PendingHighlight[] = [];
@@ -144,7 +146,7 @@ export async function renderDocument(text: string, options: RenderOptions): Prom
       hasMermaid: !!env.hasMermaid,
       hasMath: !!env.hasMath,
       stats: documentStats(tokens, text),
-      timings: { parse: t1 - t0, render: t2 - t1, total: t2 - t0 },
+      timings: { parse: t1 - t0, render: t2 - t1, total: t2 - t0, start: performance.timeOrigin + t0 },
     },
     grammars: uniquePending.length > 0 ? grammars : null,
   };
@@ -169,6 +171,43 @@ export function highlightPending(pending: PendingHighlight[]): { key: string; ht
   }
   return out;
 }
+
+/**
+ * Runs the parser over a small sample so its code paths are compiled before
+ * the first real document arrives (cold, the first parse costs several
+ * times a warm one). No math and no fence languages: nothing gets loaded.
+ */
+export function warmParser(): void {
+  md ??= createMarkdown();
+  md.parse(WARM_SAMPLE, {
+    frontMatterMode: "hidden",
+    hooks: { code: () => ({ slot: "", key: "" }), math: () => "" },
+  } satisfies RenderEnv);
+}
+
+const WARM_SAMPLE = `# Heading
+
+Some *emphasis*, **strong**, \`code\`, a [link](other.md "title"), <kbd>K</kbd>, www.example.com and :sparkles:.
+
+- item
+- [x] task
+  1. nested
+
+> [!NOTE]
+> An alert with a footnote.[^1]
+
+| Left | Right |
+|:-----|------:|
+| a    | b     |
+
+\`\`\`
+plain fence
+\`\`\`
+
+![image](image.png)
+
+[^1]: The note.
+`;
 
 /** Loads grammars ahead of time (idle warm-up after the first document). */
 export function warm(langs: string[]): Promise<void> {

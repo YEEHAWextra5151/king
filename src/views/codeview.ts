@@ -111,7 +111,7 @@ export interface CodeViewOptions {
   fileName: string;
   isMarkdown: boolean;
   softWrap: boolean;
-  onScrollLine(line: number, byUser: boolean): void;
+  onScrollLine(line: number, byUser: boolean, atEnd: boolean): void;
 }
 
 export class CodeViewController implements FindTarget {
@@ -255,7 +255,9 @@ export class CodeViewController implements FindTarget {
     if (this.frame) return;
     this.frame = requestAnimationFrame(() => {
       this.frame = 0;
-      this.options.onScrollLine(this.topLine(), performance.now() > this.programmaticUntil);
+      const el = this.view.scrollDOM;
+      const atEnd = el.scrollTop > 0 && el.scrollHeight > el.clientHeight + 2 && el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
+      this.options.onScrollLine(this.topLine(), performance.now() > this.programmaticUntil, atEnd);
     });
   };
 

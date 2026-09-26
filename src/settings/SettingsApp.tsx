@@ -240,7 +240,13 @@ function General({ settings, update }: PaneProps) {
           Remember the view for each file
         </Check>
       </Row>
-      <Row label="Command line:" note={cli ?? "Opens files with `folio README.md`, folders with `folio .`."}>
+      <Row label="Command line:" note={
+          cli ?? (
+            <>
+              Opens files with <code>folio README.md</code>, folders with <code>folio .</code>
+            </>
+          )
+        }>
         <button
           type="button"
           className="push-button"

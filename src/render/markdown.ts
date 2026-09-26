@@ -59,6 +59,16 @@ export function createMarkdown(): MarkdownIt {
     return `<div class="markdown-alert markdown-alert-${escapeHtml(type)}"${lineAttrs(t.map)} role="note"><p class="markdown-alert-title">${icon}${escapeHtml(title)}</p>\n`;
   };
 
+  // A raw `<base>` would reset the base URL of the document DOMPurify
+  // parses into (a CSP violation under base-uri 'none'). The sanitizer drops
+  // it regardless; removing it here just keeps that parse quiet.
+  const BASE_TAG = /<base\b[^>]*>/gi;
+  for (const rule of ["html_block", "html_inline"] as const) {
+    const original = md.renderer.rules[rule]!;
+    md.renderer.rules[rule] = (tokens, idx, options, env, self) =>
+      original(tokens, idx, options, env, self).replace(BASE_TAG, "");
+  }
+
   // Accessible footnote section heading, like GitHub's.
   const footnoteOpen = md.renderer.rules.footnote_block_open;
   md.renderer.rules.footnote_block_open = (tokens, idx, options, env, self) =>

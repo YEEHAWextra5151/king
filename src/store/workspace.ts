@@ -54,6 +54,10 @@ export interface TabInfo {
   words: number;
   lines: number;
   currentLine: number;
+  /** Scrolled to the very end (the last headings can't reach the top). */
+  atEnd?: boolean;
+  /** Heading line chosen in the outline, until the reader scrolls. */
+  pinnedHeading?: number | null;
 }
 
 interface WorkspaceState {

@@ -94,8 +94,13 @@ svg.icon {
   position: absolute;
   inset: 0;
 }
+/* Inactive (but mounted) tabs keep their layout, so switching back only
+   repaints; content-visibility skips their rendering work meanwhile. */
 .tab-view[hidden] {
-  display: none;
+  display: block;
+  visibility: hidden;
+  content-visibility: hidden;
+  pointer-events: none;
 }
 
 /* ─── Toolbar: traffic lights, tabs, view mode, sidebar toggle ────────── */
@@ -535,7 +540,7 @@ svg.icon {
   background: var(--recessed);
 }
 .push-button.primary {
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--accent-contrast);
   box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.08);
 }
@@ -638,6 +643,7 @@ svg.icon {
 .quick-open-row .name b {
   font-weight: 700;
 }
+/* Long folders truncate at the start; the <bdi> keeps "~/…" in order. */
 .quick-open-row .detail {
   font-size: 11px;
   color: var(--text-tertiary);
@@ -648,7 +654,7 @@ svg.icon {
   text-align: left;
 }
 .quick-open-row.is-selected {
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--accent-contrast);
 }
 .quick-open-row.is-selected .detail,
