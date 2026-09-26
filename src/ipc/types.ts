@@ -214,6 +214,8 @@ export interface Boot {
   customThemeCss: string | null;
   trafficLights: { x: number; y: number };
   toolbarHeight: number;
+  /** Log extra timings (tab switches, reloads) to the perf log. */
+  perf?: boolean;
 }
 
 // ─── Events ────────────────────────────────────────────────────────────────

@@ -6,8 +6,10 @@ import { create } from "zustand";
 import { ipc } from "../ipc";
 import type { DocErrorCode, DocumentPayload } from "../ipc/types";
 import { renderClient } from "../render/client";
+import { warmMathFonts } from "../app/warmFonts";
 import { loadKatexCss, mayHaveMath } from "../views/katexStyles";
 import { getSettings } from "./settings";
+import { useWorkspace } from "./workspace";
 
 export interface DocEntry {
   path: string;
@@ -65,13 +67,14 @@ export function loadDocument(path: string, options: { asText?: boolean; reload?:
       const current = getDoc(path);
       if (result.status === "ready") {
         const { status: _status, ...payload } = result;
-        if (!current?.payload && payload.kind === "markdown" && !payload.large) {
-          // Start rendering now instead of when the view mounts; the view's
-          // identical request shares this one's result.
+        const onScreen = useWorkspace.getState().tabs.find((t) => t.id === useWorkspace.getState().activeId)?.path === path;
+        if (!current?.payload && payload.kind === "markdown" && !payload.large && onScreen) {
+          // Start rendering the document on screen now instead of when its
+          // view mounts; the view's identical request shares the result.
           void renderClient()
             .render(path, payload.text, { frontMatter: getSettings().frontMatter })
             .catch(() => {});
-          if (mayHaveMath(payload.text)) void loadKatexCss();
+          if (mayHaveMath(payload.text)) void loadKatexCss().then(warmMathFonts);
         }
         patch(path, {
           status: "ready",

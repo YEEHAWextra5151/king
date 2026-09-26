@@ -94,12 +94,13 @@ svg.icon {
   position: absolute;
   inset: 0;
 }
-/* Inactive (but mounted) tabs keep their layout, so switching back only
-   repaints; content-visibility skips their rendering work meanwhile. */
+/* Inactive (but mounted) tabs stay laid out, so switching back is only a
+   repaint and scroll positions survive. (content-visibility: hidden made
+   WebKit lay a tab out again on every switch: 114 ms vs 31 ms for a
+   1,100-line document.) */
 .tab-view[hidden] {
   display: block;
   visibility: hidden;
-  content-visibility: hidden;
   pointer-events: none;
 }
 

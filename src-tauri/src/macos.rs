@@ -81,6 +81,9 @@ mod imp {
         let Some(mtm) = MainThreadMarker::new() else {
             return;
         };
+        // Folio has its own tabs: no native window tabbing (and no "Show Tab
+        // Bar" / "Merge All Windows" items added by AppKit).
+        NSWindow::setAllowsAutomaticWindowTabbing(false, mtm);
         let mask = NSWindowStyleMask::Titled
             | NSWindowStyleMask::Closable
             | NSWindowStyleMask::Miniaturizable

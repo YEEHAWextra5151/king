@@ -25,6 +25,7 @@ import { TabView } from "../views/TabView";
 import { runMenuAction } from "./actions";
 import { findController, useFind } from "./findController";
 import { layoutMs, onFirstPaint, reportReady } from "./firstPaint";
+import { perfEnabled, perfEnd, perfStart } from "./perfLog";
 import { panes } from "./panes";
 
 const MOUNTED_TABS = 5;
@@ -91,7 +92,9 @@ export function DocumentWindow() {
     unlisten.push(on("documents-opened", () => void ipc.takePendingOpens().then(drainPending)));
     unlisten.push(
       on("document-changed", ({ path }) => {
-        if (useDocs.getState().entries[path]) void loadDocument(path, { reload: true });
+        if (!useDocs.getState().entries[path]) return;
+        perfStart(`reload:${path}`);
+        void loadDocument(path, { reload: true });
       }),
     );
     unlisten.push(on("document-removed", ({ path }) => markRemoved(path)));
@@ -159,6 +162,18 @@ export function DocumentWindow() {
       unsubscribe();
       window.clearTimeout(timer);
     };
+  }, [ready]);
+
+  // FOLIO_PERF: time tab switches to the frame that shows them.
+  useEffect(() => {
+    if (!perfEnabled || !ready) return;
+    let previous = useWorkspace.getState().activeId;
+    return useWorkspace.subscribe((s) => {
+      if (s.activeId === previous) return;
+      previous = s.activeId;
+      perfStart("tab-switch");
+      perfEnd("tab-switch", `tab-switch ${s.tabs.find((t) => t.id === s.activeId)?.title ?? ""}`);
+    });
   }, [ready]);
 
   // Drop document cache entries no tab needs; refresh find on tab switch.

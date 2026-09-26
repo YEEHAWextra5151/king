@@ -826,6 +826,42 @@ const scenarios = {
     await s.finish("print");
   },
 
+  async extras() {
+    // First launch: the Make Default banner.
+    const s = await open({ pending: [doc("README.md")], init: { showDefaultAppBanner: true }, settings: { statusBar: true, remoteImages: false } });
+    const { page } = s;
+    await waitRendered(page);
+    await page.waitForSelector(".banner");
+    check("extras: default-app banner", (await page.textContent(".banner")).includes("default app"));
+    await page.click('.banner button:has-text("Make Default")');
+    await page.waitForTimeout(100);
+    check("extras: Make Default calls LaunchServices", (await calls(page, "make_default_app")).length === 1);
+    // Remote images blocked by the setting: no request, src parked.
+    await page.waitForTimeout(300);
+    check("extras: remote images blocked", s.remote.length === 0 && (await page.$$(`${activeBody} img[data-remote-src]`)).length === 2, `requests ${s.remote.length}`);
+    // Status bar: words, reading time, lines.
+    const status = await page.textContent(".statusbar");
+    check("extras: status bar", /words/.test(status) && /min/.test(status) && /lines?/i.test(status), status);
+    // Select All selects the document only; Copy as Markdown copies its source.
+    await menu(page, "select_all");
+    const selection = await page.evaluate(() => {
+      const sel = window.getSelection();
+      const body = document.querySelector(".tab-view.is-active .markdown-body");
+      return { inDoc: !!sel && sel.rangeCount > 0 && body.contains(sel.getRangeAt(0).commonAncestorContainer), text: sel?.toString().slice(0, 30) };
+    });
+    check("extras: select all is document-only", selection.inDoc && selection.text.startsWith("Folio Sample Project"), JSON.stringify(selection));
+    await menu(page, "copy_markdown");
+    await page.waitForTimeout(50);
+    check("extras: copy as markdown", (await page.evaluate(() => window.__mock.clipboard))?.startsWith("# Folio Sample Project"));
+    await page.click(`${activeBody} h1`);
+    await menu(page, "copy_html");
+    await page.waitForTimeout(50);
+    const html = await page.evaluate(() => window.__mock.clipboard);
+    check("extras: copy as HTML is clean", html.includes("<h1") && !/data-source-line|folio-slot/.test(html));
+    await shot(page, "extras");
+    await s.finish("extras");
+  },
+
   async help() {
     const s = await open({ pending: [doc("help.md")] });
     const { page } = s;

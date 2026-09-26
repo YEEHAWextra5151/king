@@ -80,6 +80,8 @@ Window labels: `doc-<n>` (monotonic), `settings`.
 | `menu.rs` | Full menu bar; ids → actions; enabled/checked state from the focused window. |
 | `windows.rs` | Document/settings window builders (hidden, background color, appearance, traffic lights, navigation guards), cascade, frames. |
 | `deeplink.rs` | Parse and validate `folio://open?...` (untrusted input). |
+| `folders.rs` | Folder listing for the Files sidebar and Open Quickly (`ignore` walker, Markdown only). |
+| `paths.rs` | Canonicalization, Markdown/image/text classification, README lookup, stdin temp paths. |
 | `themes.rs` | Custom theme folder listing + hot reload. |
 | `editor.rs` | Editor detection and Open in Editor (never the default handler). |
 | `cli_install.rs` | Install Command Line Tool (admin prompt, `~/.local/bin` fallback). |
@@ -91,29 +93,36 @@ Window labels: `doc-<n>` (monotonic), `settings`.
 
 ```
 src/
-  main.tsx                 boot: pick DocumentWindow or Settings app
+  main.tsx                 tiny entry: start the worker, theme <html>, load app
+  boot.ts                  boot data from Rust (settings, platform, metrics)
   ipc/                     typed commands + events (single source of truth)
-  store/workspace.ts       tabs, MRU, closed-tab stack, sidebar, folder, find
-  store/settings.ts        settings mirror (Rust is the owner)
+  app/                     DocumentWindow, actions (menu/keyboard/context),
+                           find controller, first-paint + perf logging
+  store/                   workspace (tabs, MRU, closed tabs, sidebar, banners),
+                           docs (document cache), settings (mirror of Rust's)
   render/
-    worker.ts              markdown-it + plugins + Shiki + KaTeX (Web Worker)
-    markdown.ts            markdown-it setup (shared by worker + tests)
-    plugins/               source lines, anchors, front matter, math, tables…
-    highlight.ts           Shiki core + JS engine + precompiled grammars
-    client.ts              main-thread worker client, request coalescing
+    prestart.ts            creates the worker before React evaluates
+    worker.ts, renderer.ts markdown-it + plugins + KaTeX in a Web Worker
+    markdown.ts, plugins/  markdown-it setup; source lines, anchors, front
+                           matter, math, tables, task lists, images, fences
+    highlight.ts           grammar names + plain rendering (cheap half)
+    shikiCore.ts           Shiki core + JS regex engine (lazy chunk)
+    regexCache.ts          regex translations kept in IndexedDB
+    client.ts              main-thread worker client (supersede, dedupe)
     sanitize.ts            DOMPurify allowlist + trusted-slot injection
-    blocks.ts              keyed top-level block diff, change tint
+    blocks.ts              keyed block diff, source-line geometry
     mermaid.ts             lazy Mermaid, themed, rendered near viewport
   views/
-    PreviewPane.tsx        imperative document surface
-    CodePane.tsx           CodeMirror 6 (lazy module codemirror/*.ts)
-    SplitView.tsx          divider + scroll sync
-  chrome/                  Toolbar, TabBar, ViewModeControl, Sidebar,
-                           FindBar, OpenQuickly, Welcome, Banner, StatusBar
-  lib/                     paths, fuzzy, hash, scroll anchors, find, clipboard
-  styles/                  tokens.css (Claude), github.css, paper.css,
-                           chrome.css, document.css, print.css
-  settings/                Settings window app (General/Appearance/Reading/Advanced)
+    TabView.tsx            one tab: preview/code/split orchestration
+    preview.ts             imperative document surface (render, scroll, find)
+    codeview.ts            CodeMirror 6, read-only (lazy chunk)
+    find.ts                CSS Custom Highlight API find (DOM fallback)
+  chrome/                  Toolbar (tabs, view mode), Sidebar, FindBar,
+                           OpenQuickly, Welcome, Banners, StatusBar, ImageZoom
+  lib/                     paths, fuzzy, context menus, error log
+  styles/                  tokens.css (Claude), themes.css (GitHub, Paper),
+                           chrome.css, document.css, code.css, print.css
+  settings/                Settings window (General/Appearance/Reading/Advanced)
 ```
 
 ## 5. IPC contract
@@ -125,36 +134,36 @@ TypeScript types; nothing else calls `invoke`/`listen` directly.
 
 ### Commands (frontend → Rust)
 
+Every path argument is checked in Rust against what the user opened (Finder,
+the open panel, a drop Rust itself observed, the CLI, a deep link) or a
+relative link/image from one of those documents.
+
 | Command | Args | Returns | Notes |
 |---|---|---|---|
-| `take_window_init` | – | `WindowInit` | Called once on mount. |
-| `take_pending_opens` | – | `OpenRequest[]` | Drains this window's queue. |
-| `window_ready` | `{ perf }` | – | First paint done → Rust shows the window. |
-| `registry_update` | `WindowSnapshot` | – | Tabs, active tab, folder, menu state. |
-| `read_document` | `{ path }` | `DocumentPayload` | Access-checked; may return `downloading`. |
-| `resolve_link` | `{ from, href }` | `LinkTarget` | Classifies + grants relative targets. |
-| `allow_images` | `{ doc, srcs[] }` | `Record<src, url \| null>` | Grants each existing image file to the asset scope. |
-| `list_folder` | `{ root }` | `FolderNode` | `ignore` walker, Markdown only. |
-| `open_paths` | `{ paths[], insertAt?, newWindow? }` | – | Only for paths Rust saw dropped. |
-| `show_open_panel` | `{ folders? }` | – | Native NSOpenPanel, routed like Finder opens. |
-| `locate_file` | `{ path }` | `string \| null` | Open panel for a moved file. |
-| `reveal_in_finder` | `{ path }` | – | Access-checked. |
-| `open_external` | `{ url }` | – | http, https, mailto only. |
-| `open_in_editor` | `{ path, line? }` | – | Configured/auto-detected editor. |
-| `popup_tab_menu` / `popup_path_menu` | … | – | Native menus built in Rust. |
-| `new_window` / `move_tab_to_new_window` | `TabState` | – | |
-| `print_window` | – | – | Native print panel (includes Save as PDF). |
-| `export_html` | `{ html, suggestedName }` | – | Save panel, writes a new file. |
-| `copy_to_clipboard` | `{ text, html? }` | – | NSPasteboard: plain + HTML. |
-| `get_settings` / `update_settings` | `Partial<Settings>` | `Settings` | Broadcasts `settings-changed`. |
-| `get_recents` | – | `RecentItem[]` | |
-| `get_reading_position` / `save_reading_position` | `{ path, … }` | | |
-| `list_themes` | – | `CustomTheme[]` | CSS text of user themes. |
-| `default_app_status` / `make_default_app` | – | `DefaultAppStatus` | |
-| `install_cli` | – | `CliInstallResult` | |
-| `toolbar_double_click` | – | – | Honors `AppleActionOnDoubleClick`. |
-| `start_window_drag` | – | – | Empty toolbar space. |
-| `perf_mark` | `{ name }` | – | Timing log. |
+| `take_window_init` | – | `WindowInit` | Once on mount: restored tabs, folder, sidebar, notices, first-launch banner. |
+| `take_pending_opens` | – | `OpenRequest[]` | Drains this window's open queue. |
+| `window_ready` | – | – | First layout/paint done → Rust shows the window. |
+| `registry_update` | `WindowSnapshot` | – | Tabs, active tab, folder, menu state (Rust's authoritative copy). |
+| `perf_mark` / `frontend_log` | `{ name }` / `{ level, message }` | – | Local log only. |
+| `toolbar_double_click` / `start_window_drag` | – | – | Honors `AppleActionOnDoubleClick`. |
+| `close_window` / `new_window` / `open_settings` | – | – | |
+| `read_document` | `{ path, asText }` | `ReadResult` | Decoded text + metadata, `downloading`, or a calm error. |
+| `resolve_link` | `{ from, href, root }` | `LinkTarget` | Classifies (markdown/text/directory/other/external/missing/blocked) and grants. |
+| `allow_images` | `{ doc, srcs[], root }` | `Record<src, {path,width,height} \| null>` | Grants each existing image file to the asset scope. |
+| `image_data_urls` | `{ paths[] }` | `Record<path, dataUrl>` | Export ▸ HTML (granted images only). |
+| `list_folder` | `{ root }` | `FolderListing` | `ignore` walker, Markdown only, ≤ 20 000 files. |
+| `open_dropped` | `{ paths[], insertAt }` | – | Only paths Rust saw in the native drop event. |
+| `open_granted` | `{ path, newWindow, view }` | – | Paths already granted (links, sidebar, recents, Open Quickly). |
+| `show_open_panel` / `locate_file` | `{ foldersOnly }` / `{ path }` | – / `string \| null` | Native panels. |
+| `move_tab_to_new_window` / `merge_windows` / `list_open_documents` | … | | |
+| `reveal_in_finder` / `open_external` / `open_in_editor` / `list_editors` / `show_logs_folder` | … | | `open_external`: http, https, mailto only. |
+| `popup_menu` / `popup_path_menu` | `{ token, items }` / `{ path }` | – | Native NSMenus; choice returns as `context-menu`. |
+| `print_window` / `export_html` / `copy_to_clipboard` | … | | Print panel; save panel; plain + HTML pasteboard. |
+| `get_settings` / `update_settings` / `reset_settings` | `Partial<Settings>` | `Settings` | Broadcasts `settings-changed`. |
+| `get_recents` / `clear_recents` / `get_reading_position` / `save_reading_position` | … | | |
+| `list_themes` / `open_themes_folder` | – | `CustomTheme[]` | User CSS themes. |
+| `default_app_status` / `make_default_app` / `dismiss_default_app_banner` | – | `DefaultAppStatus` | LaunchServices. |
+| `install_cli` | – | `CliInstallResult` | Symlink with the admin prompt, `~/.local/bin` fallback. |
 
 ### Events (Rust → frontend)
 
@@ -164,6 +173,7 @@ TypeScript types; nothing else calls `invoke`/`listen` directly.
 | `document-changed` | `{ path, modifiedMs }` | windows that show `path` |
 | `document-removed` | `{ path }` | windows that show `path` |
 | `menu-action` | `{ action, arg? }` | focused window |
+| `context-menu` | `{ token, item }` | the window that asked |
 | `settings-changed` | `Settings` | all windows |
 | `themes-changed` | `CustomTheme[]` | all windows |
 | `recents-changed` | `RecentItem[]` | all windows |
@@ -229,26 +239,31 @@ Logs: `~/Library/Logs/Folio/`. Standard Input temp files:
 |---|---|---|
 | Cold: Finder double-click → rendered README | < 500 ms | `perf.rs` marks from process start: `opened`, `window-created`, `dom-ready`, `document-read`, `render-committed`, `window-shown`; `scripts/measure-launch.sh` drives `open` on macOS. |
 | Warm: open while running | < 150 ms | `Opened` → `render-committed`. |
-| Tab switch | < 50 ms | `performance.now()` around activation, logged in dev builds. |
+| Tab switch | < 50 ms | Store activation → the painted frame, logged with `FOLIO_PERF=1`. |
 
-Levers: tiny main chunk (CodeMirror, Mermaid, KaTeX lazy); worker spawned at
-boot, before the document is read; precompiled Shiki grammars on the raw JS
-regex engine (no WASM); hidden windows shown after first paint; cached
-per-block output.
+Levers (as built): a 6 KB entry chunk that starts the render worker before
+React loads; CodeMirror, Mermaid, KaTeX and Shiki's core are lazy chunks; the
+first render is requested as soon as the document is read and the worker
+warms its parser while idle; runtime grammars on the JavaScript regex engine
+with translations cached in IndexedDB; hidden windows shown as soon as the
+first document is laid out; cached per-block output; inactive tabs keep
+their layout. Measured numbers are in ACCEPTANCE.md.
 
 ## 10. Milestones
 
+All built; see ACCEPTANCE.md for what was verified where.
+
 1. Scaffold, API research, this plan. ✔︎
-2. Rust core: open queue, documents, access, registry, commands, windows.
-3. Render pipeline: worker, plugins, Shiki, KaTeX, Mermaid, sanitizer.
-4. Themes: tokens, three themes, custom themes, no-flash boot.
-5. Tabs & windows: tab bar, dedupe, session, welcome.
-6. Code view + Split + scroll sync.
-7. Navigation: sidebar, Open Quickly, find, links & history, zoom, copy.
-8. Live reload.
-9. Native menus, settings window, print/export, help.
-10. Default app, file types, CLI, deep links, icon, bundling.
-11. Tests, performance numbers, acceptance checklist.
+2. Rust core: open queue, documents, access, registry, commands, windows. ✔︎
+3. Render pipeline: worker, plugins, Shiki, KaTeX, Mermaid, sanitizer. ✔︎
+4. Themes: tokens, three themes, custom themes, no-flash boot. ✔︎
+5. Tabs & windows: tab bar, dedupe, session, welcome. ✔︎
+6. Code view + Split + scroll sync. ✔︎
+7. Navigation: sidebar, Open Quickly, find, links & history, zoom, copy. ✔︎
+8. Live reload. ✔︎
+9. Native menus, settings window, print/export, help. ✔︎
+10. Default app, file types, CLI, deep links, icon, bundling. ✔︎
+11. Tests, performance numbers, acceptance checklist. ✔︎
 
 ## 11. Risks and mitigations
 
@@ -257,7 +272,7 @@ per-block output.
 | This work is built on Linux; macOS-only code can't run here. | All objc2 code is behind `cfg(target_os = "macos")` and type-checked with `cargo check --target aarch64-apple-darwin`; Linux fallbacks let the whole app run under WebKitGTK for end-to-end checks. What still needs a Mac is listed in the acceptance report. |
 | `RunEvent::Opened` arrives before setup on cold launch. | Queue in pre-registered state; windows created only in setup. |
 | White flash on window creation. | Hidden windows, native background from theme (`macos-private-api` → `drawsBackground = NO`), inline critical CSS, theme resolved in an initialization script before first paint. |
-| Shiki cold-start cost (first TypeScript highlight ≈150 ms). | Progressive highlighting: plain code first, colors patched in; worker pre-warmed at boot. |
+| Shiki cold-start cost (first TypeScript highlight ≈260 ms, ≈160 ms with cached translations). | Progressive highlighting: plain code first, colors patched in; regex translations cached in IndexedDB. |
 | DOMPurify cost on very large documents. | Trusted slots keep Shiki/KaTeX output out of the sanitizer; >10 MB files open in Code view. |
 | WKWebView swallowing menu shortcuts (CodeMirror keymaps). | Minimal CodeMirror keymap; menu shortcuts never `preventDefault`ed. |
 | Atomic saves breaking watches. | Watch parent directories, compare mtime/size after debounce. |
@@ -273,6 +288,12 @@ per-block output.
 * Vitest: GitHub-compatible heading ids, alerts, footnotes, task lists, math
   errors, front matter, sanitizer (malicious inputs), fuzzy matcher, scroll
   interpolation, block diff.
-* Playwright (Chromium, mocked IPC): the real frontend bundle — rendering,
-  tabs, split, find, theme switching, screenshots for visual review.
-* The real app under Xvfb/WebKitGTK for end-to-end IPC and timing.
+* e2e (`e2e/run.mjs`, Chromium + mocked IPC + the production CSP): the real
+  frontend bundle — rendering, hostile HTML, tabs, views, sidebar, find,
+  Open Quickly, welcome, errors, large files, live reload, restore,
+  settings, zoom, print, export — with screenshots for visual review;
+  `e2e/startup.mjs` breaks down a cold start.
+* The real app (Linux build, WebKitGTK under Xvfb) driven with xdotool for
+  end-to-end IPC, CSP, deep links, folders, live reload, session restore and
+  timing.
+* `scripts/measure-launch.sh` on a Mac for the launch budgets.

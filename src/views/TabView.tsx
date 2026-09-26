@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { actions, followLink, showLinkMenu, showImageMenu } from "../app/actions";
 import { panes, type PaneHandle } from "../app/panes";
-import { signalFirstPaint } from "../app/firstPaint";
+import { hasFirstPainted, onFirstPaint, signalFirstPaint } from "../app/firstPaint";
+import { perfEnd } from "../app/perfLog";
 import { ipc } from "../ipc";
 import type { ViewMode } from "../ipc/types";
 import { CloudIcon, MissingDocIcon, WarningIcon } from "../chrome/icons";
@@ -53,10 +54,20 @@ function DocumentTab({ tab, active }: { tab: Tab; active: boolean }) {
   const code = useRef<CodeViewController | null>(null);
   const tabRef = useRef(tab);
   tabRef.current = tab;
+  const activeRef = useRef(active);
+  activeRef.current = active;
   const entryRef = useRef(entry);
   entryRef.current = entry;
 
   const [renderError, setRenderError] = useState<Error | null>(null);
+  // Background tabs render after the window's first paint, so the tab on
+  // screen gets the worker first.
+  const [mayRender, setMayRender] = useState(() => active || hasFirstPainted());
+  useEffect(() => {
+    if (mayRender) return;
+    if (active) setMayRender(true);
+    else onFirstPaint(() => setMayRender(true));
+  }, [active, mayRender]);
   const [renderedVersion, setRenderedVersion] = useState(-1);
   const [codeReady, setCodeReady] = useState(false);
   const lastRender = useRef<string | null>(null);
@@ -120,13 +131,15 @@ function DocumentTab({ tab, active }: { tab: Tab; active: boolean }) {
         if (initial && !(t.scrollTarget && t.scrollTarget.seq > consumedSeq.current) && t.anchor > 0) {
           preview.current?.scrollToLine(t.anchor, { stick: true });
         }
-        void ipc.perfMark(`render-committed ${output.timings.total.toFixed(1)}ms worker`);
-        signalFirstPaint();
+        if (initial) void ipc.perfMark(`render-committed ${output.timings.total.toFixed(1)}ms worker`);
+        else perfEnd(`reload:${t.path}`, "reload-committed");
+        // Only the tab on screen decides when the window can appear.
+        if (activeRef.current) signalFirstPaint();
       },
       onError: (error) => {
         console.error(error);
         setRenderError(error);
-        signalFirstPaint();
+        if (activeRef.current) signalFirstPaint();
       },
       onLink: (anchor, event) => void followLink(tabRef.current, anchor, event, preview.current),
       onImageClick: (src) => useWorkspace.setState({ zoomImage: src }),
@@ -151,7 +164,7 @@ function DocumentTab({ tab, active }: { tab: Tab; active: boolean }) {
   useEffect(() => {
     const ctrl = preview.current;
     const payload = entry?.payload;
-    if (!ctrl || !payload || !needsPreview || entry?.asText) return;
+    if (!ctrl || !payload || !needsPreview || entry?.asText || !mayRender) return;
     const key = `${path}|${entry.version}|${frontMatter}|${remoteImages}`;
     if (lastRender.current === key) return;
     const previous = lastRender.current;
@@ -167,7 +180,7 @@ function DocumentTab({ tab, active }: { tab: Tab; active: boolean }) {
       });
       setRenderedVersion(cached.version);
       requestAnimationFrame(() => ctrl.scrollToLine(tabRef.current.anchor));
-      signalFirstPaint();
+      if (activeRef.current) signalFirstPaint();
       return;
     }
     const isReload = !!previous && previous.startsWith(`${path}|`) && !previous.startsWith(`${path}|${entry.version}|`);
@@ -180,7 +193,7 @@ function DocumentTab({ tab, active }: { tab: Tab; active: boolean }) {
       folderRoot: folder,
       tint: isReload && highlightChanges,
     });
-  }, [entry, needsPreview, frontMatter, remoteImages, folder, highlightChanges, path, tab.id]);
+  }, [entry, needsPreview, frontMatter, remoteImages, folder, highlightChanges, path, tab.id, mayRender]);
 
   // ─── Code ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -202,7 +215,9 @@ function DocumentTab({ tab, active }: { tab: Tab; active: boolean }) {
       });
       code.current.scrollToLine(tabRef.current.anchor);
       setCodeReady(true);
-      if (tabRef.current.kind === "text" || effectiveMode(tabRef.current, entryRef.current) === "code") signalFirstPaint();
+      if (activeRef.current && (tabRef.current.kind === "text" || effectiveMode(tabRef.current, entryRef.current) === "code")) {
+        signalFirstPaint();
+      }
     });
     return () => {
       cancelled = true;
@@ -343,9 +358,10 @@ function DocumentTab({ tab, active }: { tab: Tab; active: boolean }) {
 
   // ─── Render ────────────────────────────────────────────────────────────
   if (entry?.status === "error" && !entry.payload) {
-    return <ErrorState tab={tab} entry={entry} />;
+    return <ErrorState tab={tab} entry={entry} active={active} />;
   }
   if (entry?.status === "downloading" && !entry.payload) {
+    if (active) signalFirstPaint();
     return (
       <div className="error-state" role="status">
         <CloudIcon size={40} />
@@ -430,7 +446,11 @@ function SplitDivider({ tab }: { tab: Tab }) {
   );
 }
 
-function ErrorState({ tab, entry }: { tab: Tab; entry: DocEntry }) {
+function ErrorState({ tab, entry, active }: { tab: Tab; entry: DocEntry; active: boolean }) {
+  // A document that can't be shown still lets the window appear.
+  useEffect(() => {
+    if (active) signalFirstPaint();
+  }, [active]);
   const code = entry.error?.code ?? "other";
   const title =
     code === "notFound"

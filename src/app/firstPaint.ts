@@ -11,6 +11,10 @@ export function signalFirstPaint(): void {
   waiters.splice(0).forEach((w) => w());
 }
 
+export function hasFirstPainted(): boolean {
+  return signalled;
+}
+
 export function onFirstPaint(callback: () => void): void {
   if (signalled) callback();
   else waiters.push(callback);

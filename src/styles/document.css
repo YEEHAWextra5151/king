@@ -215,6 +215,9 @@
   background: var(--recessed);
   border: 0.5px solid var(--hairline);
   white-space: break-spaces;
+  /* A span that wraps gets a rounded box on each line. */
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 .markdown-body a > code {
   color: inherit;

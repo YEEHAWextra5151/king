@@ -139,8 +139,11 @@ pub fn expand_home(path: &str) -> PathBuf {
 }
 
 /// Directory where the `folio -` command stores Standard Input.
+/// Must match `identifier` in tauri.conf.json (a test checks).
+pub const BUNDLE_ID: &str = "dev.yourname.folio";
+
 pub fn stdin_dir() -> PathBuf {
-    std::env::temp_dir().join("dev.yourname.folio").join("stdin")
+    std::env::temp_dir().join(BUNDLE_ID).join("stdin")
 }
 
 pub fn is_stdin_temp(path: &Path) -> bool {
@@ -151,6 +154,12 @@ pub fn is_stdin_temp(path: &Path) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn bundle_id_matches_the_config() {
+        let conf: serde_json::Value = serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
+        assert_eq!(conf["identifier"].as_str(), Some(BUNDLE_ID));
+    }
 
     #[test]
     fn markdown_extensions_are_case_insensitive() {

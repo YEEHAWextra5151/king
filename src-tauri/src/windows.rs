@@ -138,6 +138,9 @@ fn boot_script(app: &AppHandle, label: &str, kind: &str) -> String {
         "customThemeCss": custom_css,
         "trafficLights": { "x": tl_x, "y": tl_y },
         "toolbarHeight": TOOLBAR_HEIGHT,
+        // FOLIO_PERF=1 also logs tab switches and live reloads (for
+        // scripts/measure-launch.sh); launch and open marks are always on.
+        "perf": std::env::var_os("FOLIO_PERF").is_some(),
     });
     // Runs at document start, before any page script: expose the boot data
     // and resolve theme attributes before first paint.
