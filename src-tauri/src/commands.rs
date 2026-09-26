@@ -772,7 +772,13 @@ pub fn reset_settings(app: AppHandle) -> Settings {
 
 #[tauri::command]
 pub fn get_recents(app: AppHandle) -> Vec<RecentItem> {
-    app.state::<Recents>().items()
+    // The Welcome list skips items that are gone (they stay in the menu,
+    // where choosing one explains that it's missing).
+    app.state::<Recents>()
+        .items()
+        .into_iter()
+        .filter(|i| Path::new(&i.path).exists())
+        .collect()
 }
 
 #[tauri::command]

@@ -129,7 +129,8 @@ pub fn clear(app: &AppHandle) {
 fn changed(app: &AppHandle) {
     let items = app.state::<Recents>().items();
     crate::menu::rebuild_recents(app, &items);
-    let _ = app.emit("recents-changed", &items);
+    let existing: Vec<&RecentItem> = items.iter().filter(|i| Path::new(&i.path).exists()).collect();
+    let _ = app.emit("recents-changed", &existing);
 }
 
 #[cfg(test)]

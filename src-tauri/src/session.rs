@@ -148,6 +148,15 @@ pub fn surviving_tabs(snapshot: &WindowSnapshot) -> (Vec<Value>, usize) {
     (kept, missing)
 }
 
+/// The notice shown after a restore when some files are gone.
+pub fn missing_notice(missing: usize) -> Option<String> {
+    match missing {
+        0 => None,
+        1 => Some("1 file from your last session couldn't be found.".to_string()),
+        n => Some(format!("{n} files from your last session couldn't be found.")),
+    }
+}
+
 /// Restores the previous session. Returns the number of windows created.
 pub fn restore(app: &AppHandle) -> usize {
     let settings = app.state::<SettingsState>().get();
@@ -156,10 +165,12 @@ pub fn restore(app: &AppHandle) -> usize {
     }
     let session = load(app);
     let access = app.state::<Access>();
-    let mut created = 0;
+
+    // Decide what survives first, so the notice lands in a window that is
+    // actually created (the last one), even when whole windows are gone.
     let mut missing_total = 0;
-    let count = session.windows.len();
-    for (index, window) in session.windows.into_iter().enumerate() {
+    let mut plans = Vec::new();
+    for window in session.windows {
         let (tabs, missing) = surviving_tabs(&window.snapshot);
         missing_total += missing;
         let folder = window
@@ -170,6 +181,25 @@ pub fn restore(app: &AppHandle) -> usize {
         if tabs.is_empty() && folder.is_none() {
             continue;
         }
+        plans.push((window, tabs, folder));
+    }
+    let notice = missing_notice(missing_total);
+
+    if plans.is_empty() {
+        // Nothing to bring back, but say why the windows didn't come back.
+        let Some(notice) = notice else {
+            return 0;
+        };
+        let init = WindowInit {
+            notices: vec![notice],
+            ..Default::default()
+        };
+        return usize::from(windows::create_document_window(app, init, Vec::new()).is_some());
+    }
+
+    let last = plans.len() - 1;
+    let mut created = 0;
+    for (index, (window, tabs, folder)) in plans.into_iter().enumerate() {
         for tab in &tabs {
             if let Some(p) = tab.get("path").and_then(Value::as_str) {
                 access.grant_file(&PathBuf::from(p));
@@ -183,15 +213,7 @@ pub fn restore(app: &AppHandle) -> usize {
             .active_tab_id
             .clone()
             .filter(|id| tabs.iter().any(|t| t.get("id").and_then(Value::as_str) == Some(id)));
-        let is_last = index + 1 == count;
-        let notices = if is_last && missing_total > 0 {
-            vec![match missing_total {
-                1 => "1 file from your last session couldn't be found.".to_string(),
-                n => format!("{n} files from your last session couldn't be found."),
-            }]
-        } else {
-            Vec::new()
-        };
+        let notices = if index == last { notice.clone().into_iter().collect() } else { Vec::new() };
         let init = WindowInit {
             tabs,
             active_tab_id: active,
@@ -235,6 +257,13 @@ mod tests {
         assert_eq!(kept.len(), 1);
         assert_eq!(kept[0]["id"], "a");
         assert_eq!(missing, 1);
+    }
+
+    #[test]
+    fn missing_notice_wording() {
+        assert_eq!(missing_notice(0), None);
+        assert_eq!(missing_notice(1).as_deref(), Some("1 file from your last session couldn't be found."));
+        assert_eq!(missing_notice(3).as_deref(), Some("3 files from your last session couldn't be found."));
     }
 
     #[test]
