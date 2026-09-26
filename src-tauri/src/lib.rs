@@ -122,6 +122,7 @@ pub fn run() {
             commands::locate_file,
             commands::move_tab_to_new_window,
             commands::merge_windows,
+            commands::list_open_documents,
             commands::reveal_in_finder,
             commands::open_external,
             commands::open_in_editor,

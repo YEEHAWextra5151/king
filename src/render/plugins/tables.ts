@@ -11,7 +11,7 @@ export function tables(md: MarkdownIt): void {
       if (token.type !== "th_open" && token.type !== "td_open") continue;
       const style = token.attrGet("style");
       if (!style) continue;
-      const m = /text-align:\s*(left|center|right)/.exec(style);
+      const m = /text-align:\s*(left|center|right)/.exec(String(style));
       token.attrs = (token.attrs ?? []).filter(([name]) => name !== "style");
       if (m) token.attrSet("align", m[1]);
     }

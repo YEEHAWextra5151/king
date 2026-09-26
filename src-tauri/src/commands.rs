@@ -469,6 +469,30 @@ pub fn merge_windows(app: AppHandle) {
     merge_all_windows(&app);
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OpenDocument {
+    pub path: String,
+    pub title: String,
+    pub window: String,
+}
+
+/// Every document open in any window (for Open Quickly).
+#[tauri::command]
+pub fn list_open_documents(app: AppHandle) -> Vec<OpenDocument> {
+    app.state::<Registry>()
+        .all()
+        .into_iter()
+        .flat_map(|w| {
+            let label = w.label.clone();
+            w.snapshot.tabs.into_iter().filter_map(move |t| {
+                let path = t.path?;
+                (!t.is_stdin).then(|| OpenDocument { path, title: t.title, window: label.clone() })
+            })
+        })
+        .collect()
+}
+
 // ─── Finder, browser, editor ───────────────────────────────────────────────
 
 pub fn reveal_path(app: &AppHandle, path: &Path) {

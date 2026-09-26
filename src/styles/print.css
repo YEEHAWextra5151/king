@@ -1,0 +1,102 @@
+/* Print (and Save as PDF): white paper, no chrome, the active document only. */
+@media print {
+  :root {
+    --surface: #ffffff;
+    --recessed: #f5f5f3;
+    --text: #000000;
+    --text-heading: #000000;
+    --text-secondary: #333333;
+    --text-tertiary: #555555;
+    --hairline: rgba(0, 0, 0, 0.18);
+    --hairline-strong: rgba(0, 0, 0, 0.35);
+    --link: #000000;
+    --syn-text: #000000;
+    color-scheme: light;
+  }
+
+  html,
+  body,
+  #root,
+  .app,
+  .app-main,
+  .app-content {
+    height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+  .app {
+    display: block;
+  }
+  .toolbar,
+  .findbar,
+  .sidebar,
+  .statusbar,
+  .banners,
+  .overlay,
+  .image-zoom,
+  .code-header,
+  .split-divider,
+  .tab-view:not(.is-active),
+  .split .code-pane-host {
+    display: none !important;
+  }
+  .tab-view.is-active,
+  .split,
+  .split-pane,
+  .preview-scroll {
+    position: static !important;
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .markdown-body {
+    max-width: none;
+    padding: 0;
+    font-size: 11pt;
+  }
+  .markdown-body a {
+    text-decoration: underline;
+  }
+  .markdown-body .code-block,
+  .markdown-body pre,
+  .markdown-body table,
+  .markdown-body figure,
+  .markdown-body img,
+  .markdown-body .math-block,
+  .markdown-body .mermaid-block,
+  .markdown-body .markdown-alert,
+  .markdown-body blockquote {
+    break-inside: avoid;
+  }
+  .markdown-body h1,
+  .markdown-body h2,
+  .markdown-body h3,
+  .markdown-body h4 {
+    break-after: avoid;
+  }
+  .markdown-body .code-block pre {
+    white-space: pre-wrap;
+    overflow: visible;
+  }
+  .markdown-body .table-wrap {
+    overflow: visible;
+  }
+  .markdown-body .block-changed {
+    animation: none;
+  }
+  /* Code view prints the full source, not CodeMirror's visible window. */
+  .print-source {
+    display: block !important;
+    margin: 0;
+    font: 9.5pt/1.45 var(--font-code);
+    white-space: pre-wrap;
+    color: #000;
+  }
+  .code-pane {
+    display: none !important;
+  }
+}
+.print-source {
+  display: none;
+}

@@ -1,0 +1,565 @@
+/* The reading surface. Sizes are in em so text zoom reflows everything. */
+
+.preview-scroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--surface);
+  outline: none;
+  overscroll-behavior: contain;
+}
+
+.markdown-body {
+  box-sizing: border-box;
+  max-width: calc(var(--doc-width) + 64px);
+  margin: 0 auto;
+  padding: 40px 32px 40vh;
+  font-family: var(--doc-font);
+  font-size: calc(var(--doc-size) * var(--doc-zoom));
+  line-height: var(--doc-line-height);
+  color: var(--text);
+  overflow-wrap: break-word;
+  font-kerning: normal;
+  -webkit-font-smoothing: antialiased;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: auto;
+}
+
+:root[data-width="full"] .markdown-body {
+  max-width: none;
+  padding-left: 48px;
+  padding-right: 48px;
+}
+
+.markdown-body > :first-child {
+  margin-top: 0 !important;
+}
+
+.markdown-body p,
+.markdown-body li {
+  text-wrap: pretty;
+}
+
+.markdown-body p,
+.markdown-body blockquote,
+.markdown-body ul,
+.markdown-body ol,
+.markdown-body dl,
+.markdown-body table,
+.markdown-body details,
+.markdown-body .table-wrap,
+.markdown-body .code-block,
+.markdown-body .math-block,
+.markdown-body .mermaid-block,
+.markdown-body .markdown-alert,
+.markdown-body .front-matter {
+  margin: 0 0 1em;
+}
+
+/* Headings: same family, semibold, no underline rules. */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  font-family: var(--doc-font);
+  font-weight: var(--heading-weight);
+  color: var(--text-heading);
+  line-height: 1.25;
+  margin: 1.6em 0 0.6em;
+  text-wrap: balance;
+  scroll-margin-top: 16px;
+}
+.markdown-body h1 {
+  font-size: calc(30em / 17);
+  letter-spacing: -0.01em;
+}
+.markdown-body h2 {
+  font-size: calc(24em / 17);
+}
+.markdown-body h3 {
+  font-size: calc(20em / 17);
+}
+.markdown-body h4 {
+  font-size: 1em;
+}
+.markdown-body h5 {
+  font-size: calc(15em / 17);
+}
+.markdown-body h6 {
+  font-size: calc(15em / 17);
+  color: var(--text-tertiary);
+}
+
+.markdown-body a {
+  color: var(--link);
+  text-decoration: underline;
+  text-decoration-thickness: 0.06em;
+  text-underline-offset: 0.18em;
+  text-decoration-color: color-mix(in srgb, var(--link) 45%, transparent);
+  cursor: pointer;
+}
+.markdown-body a:hover {
+  text-decoration-color: var(--link);
+}
+.markdown-body a:not([href]) {
+  color: inherit;
+  text-decoration: none;
+  cursor: auto;
+}
+/* Links in the document get the pointing hand; nothing else does. */
+.markdown-body a[href] * {
+  cursor: pointer;
+}
+
+.markdown-body strong {
+  font-weight: 650;
+}
+
+.markdown-body hr {
+  height: 0;
+  border: 0;
+  border-top: 0.5px solid var(--hairline-strong);
+  margin: 2em 0;
+}
+
+.markdown-body blockquote {
+  margin-left: 0;
+  margin-right: 0;
+  padding: 0 0 0 1em;
+  border-left: 3px solid var(--hairline-strong);
+  color: var(--text-secondary);
+}
+.markdown-body blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.6em;
+}
+.markdown-body li + li {
+  margin-top: 0.25em;
+}
+.markdown-body li > p {
+  margin-bottom: 0.5em;
+}
+.markdown-body li > ul,
+.markdown-body li > ol {
+  margin-top: 0.25em;
+  margin-bottom: 0;
+}
+.markdown-body ol ol,
+.markdown-body ul ol {
+  list-style-type: lower-roman;
+}
+.markdown-body ul ul ol,
+.markdown-body ol ol ol {
+  list-style-type: lower-alpha;
+}
+.markdown-body dt {
+  font-weight: 600;
+}
+.markdown-body dd {
+  margin-left: 1.5em;
+}
+
+/* Task lists: custom checkboxes in the accent color. */
+.markdown-body .contains-task-list {
+  list-style: none;
+  padding-left: 1.6em;
+}
+.markdown-body .task-list-item {
+  position: relative;
+}
+.markdown-body .task-list-item-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  position: absolute;
+  left: -1.55em;
+  top: 0.32em;
+  width: 1em;
+  height: 1em;
+  margin: 0;
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: 0.28em;
+  background: var(--surface);
+  cursor: default;
+  opacity: 1;
+}
+.markdown-body .task-list-item-checkbox:checked {
+  border-color: var(--accent);
+  background: var(--accent)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / 88% no-repeat;
+}
+.markdown-body .task-list-item:has(> .task-list-item-checkbox:checked),
+.markdown-body .task-list-item:has(> p > .task-list-item-checkbox:checked) {
+  color: var(--text-secondary);
+}
+
+/* Inline code: recessed chip. */
+.markdown-body code,
+.markdown-body kbd,
+.markdown-body samp,
+.markdown-body tt {
+  font-family: var(--font-code);
+  font-size: var(--code-size);
+}
+.markdown-body :not(pre) > code {
+  padding: 0.12em 0.36em;
+  border-radius: 5px;
+  background: var(--recessed);
+  border: 0.5px solid var(--hairline);
+  white-space: break-spaces;
+}
+.markdown-body a > code {
+  color: inherit;
+}
+.markdown-body kbd {
+  display: inline-block;
+  padding: 0.06em 0.42em;
+  border: 0.5px solid var(--hairline-strong);
+  border-bottom-width: 1.5px;
+  border-radius: 5px;
+  background: var(--raised);
+  line-height: 1.35;
+  font-size: 0.78em;
+  font-family: var(--font-ui);
+}
+
+/* Tables: hairlines, recessed header, tabular numbers, own scroll. */
+.markdown-body .table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.markdown-body table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+  width: max-content;
+  max-width: none;
+  min-width: 40%;
+}
+.markdown-body th,
+.markdown-body td {
+  padding: 0.42em 0.8em;
+  border: 0.5px solid var(--hairline);
+  vertical-align: top;
+  text-align: left;
+}
+.markdown-body th {
+  background: var(--recessed);
+  font-weight: 600;
+}
+.markdown-body th[align="center"],
+.markdown-body td[align="center"] {
+  text-align: center;
+}
+.markdown-body th[align="right"],
+.markdown-body td[align="right"] {
+  text-align: right;
+}
+.markdown-body table code {
+  white-space: nowrap;
+}
+
+/* Images: rounded, never wider than the column, click to zoom. */
+.markdown-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  vertical-align: middle;
+  cursor: zoom-in;
+  box-sizing: content-box;
+}
+.markdown-body a img {
+  cursor: pointer;
+}
+.markdown-body img[align="right"] {
+  float: right;
+  margin: 0 0 0.6em 1em;
+}
+.markdown-body img[align="left"] {
+  float: left;
+  margin: 0 1em 0.6em 0;
+}
+.markdown-body img.image-missing,
+.markdown-body img.image-blocked {
+  display: inline-block;
+  min-width: 2.4em;
+  min-height: 1.6em;
+  border: 0.5px dashed var(--hairline-strong);
+  background: var(--recessed);
+  cursor: default;
+}
+.markdown-body p[align="center"],
+.markdown-body div[align="center"],
+.markdown-body h1[align="center"],
+.markdown-body h2[align="center"],
+.markdown-body h3[align="center"] {
+  text-align: center;
+}
+.markdown-body p[align="right"],
+.markdown-body div[align="right"] {
+  text-align: right;
+}
+.markdown-body figure {
+  margin: 0 0 1em;
+}
+.markdown-body figcaption {
+  color: var(--text-secondary);
+  font-size: 0.88em;
+}
+
+.markdown-body details {
+  padding: 0;
+}
+.markdown-body summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.markdown-body details[open] > summary {
+  margin-bottom: 0.5em;
+}
+.markdown-body mark {
+  background: var(--warning-tint);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 0.15em;
+}
+.markdown-body sup,
+.markdown-body sub {
+  font-size: 0.72em;
+  line-height: 0;
+}
+
+/* Footnotes */
+.markdown-body .footnote-ref a {
+  text-decoration: none;
+  font-family: var(--font-ui);
+  font-size: 0.9em;
+  padding: 0 0.1em;
+}
+.markdown-body hr.footnotes-sep {
+  margin-top: 3em;
+}
+.markdown-body .footnotes {
+  font-size: 0.88em;
+  color: var(--text-secondary);
+}
+.markdown-body .footnote-backref {
+  text-decoration: none;
+  font-family: var(--font-ui);
+}
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* GitHub alerts: a left rule, a tinted title, and a faint tint. */
+.markdown-body .markdown-alert {
+  --alert-color: var(--info-text);
+  --alert-tint: var(--info-tint);
+  padding: 0.55em 1em 0.6em;
+  border-left: 3px solid var(--alert-color);
+  border-radius: 0 6px 6px 0;
+  background: var(--recessed);
+  background: color-mix(in srgb, var(--alert-tint) 42%, var(--surface));
+}
+.markdown-body .markdown-alert > :last-child {
+  margin-bottom: 0;
+}
+.markdown-body .markdown-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  margin: 0 0 0.3em;
+  font-family: var(--font-ui);
+  font-size: 0.86em;
+  font-weight: 600;
+  color: var(--alert-color);
+}
+.markdown-body .markdown-alert-title svg {
+  fill: currentColor;
+  flex: none;
+}
+.markdown-body .markdown-alert-tip {
+  --alert-color: var(--success-text);
+  --alert-tint: var(--success-tint);
+}
+.markdown-body .markdown-alert-important {
+  --alert-color: var(--accent);
+  --alert-tint: rgba(217, 119, 87, 0.28);
+}
+:root[data-theme="github"] .markdown-body .markdown-alert-important {
+  --alert-color: #8250df;
+  --alert-tint: #fbefff;
+}
+.markdown-body .markdown-alert-warning {
+  --alert-color: var(--warning-text);
+  --alert-tint: var(--warning-tint);
+}
+.markdown-body .markdown-alert-caution {
+  --alert-color: var(--danger-text);
+  --alert-tint: var(--danger-tint);
+}
+
+/* Front matter card */
+.markdown-body .front-matter {
+  padding: 0.7em 1em;
+  border: 0.5px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--recessed);
+  font-family: var(--font-ui);
+  font-size: 0.78em;
+  line-height: 1.5;
+}
+.markdown-body .front-matter dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.2em 1.2em;
+  margin: 0;
+}
+.markdown-body .front-matter dt {
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+.markdown-body .front-matter dd {
+  margin: 0;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* Math */
+.markdown-body .math-block {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.2em 0;
+}
+.markdown-body .math-display {
+  display: block;
+  overflow-x: auto;
+  text-align: center;
+  margin: 0.6em 0;
+}
+.markdown-body .katex {
+  font-size: 1.08em;
+}
+
+/* Mermaid */
+.markdown-body .mermaid-block {
+  min-height: 3em;
+  padding: 1em;
+  border-radius: 8px;
+  border: 0.5px solid var(--hairline);
+  background: var(--surface);
+  text-align: center;
+  overflow-x: auto;
+}
+.markdown-body .mermaid-block .mermaid-source {
+  display: none;
+}
+.markdown-body .mermaid-block:not(.is-rendered):not(.has-error) .mermaid-source {
+  display: block;
+  visibility: hidden;
+  margin: 0;
+  max-height: 12em;
+  overflow: hidden;
+}
+.markdown-body .mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Rendering errors: calm, inline, with the source. */
+.markdown-body .render-error {
+  display: block;
+  margin: 0 0 1em;
+  padding: 0.7em 1em;
+  border-left: 3px solid var(--danger-text);
+  border-radius: 0 6px 6px 0;
+  background: var(--recessed);
+  background: color-mix(in srgb, var(--danger-tint) 45%, var(--surface));
+  font-family: var(--font-ui);
+  font-size: 0.8em;
+  color: var(--text-secondary);
+  text-align: left;
+}
+.markdown-body span.render-error {
+  display: inline;
+  padding: 0.05em 0.3em;
+  margin: 0;
+  border-left-width: 2px;
+  border-radius: 3px;
+}
+.markdown-body .render-error-title {
+  font-weight: 600;
+  color: var(--danger-text);
+  margin-bottom: 0.2em;
+}
+.markdown-body .render-error-message {
+  display: block;
+  white-space: pre-wrap;
+}
+.markdown-body .render-error-source {
+  display: block;
+  margin: 0.5em 0 0;
+  padding: 0;
+  font-family: var(--font-code);
+  font-size: 0.95em;
+  white-space: pre-wrap;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+}
+
+/* Changed blocks after a live reload: a brief accent tint. */
+@keyframes folio-changed {
+  from {
+    background-color: rgba(217, 119, 87, 0.18);
+    box-shadow: -10px 0 0 rgba(217, 119, 87, 0.18), 10px 0 0 rgba(217, 119, 87, 0.18);
+  }
+  to {
+    background-color: transparent;
+    box-shadow: -10px 0 0 transparent, 10px 0 0 transparent;
+  }
+}
+.markdown-body .block-changed {
+  animation: folio-changed 1.6s ease-out;
+  border-radius: 4px;
+}
+:root[data-highlight-changes="false"] .markdown-body .block-changed {
+  animation: none;
+}
+
+/* Find-in-page highlights (CSS Custom Highlight API, <mark> fallback). */
+::highlight(folio-find) {
+  background-color: rgba(246, 200, 80, 0.55);
+  color: inherit;
+}
+::highlight(folio-find-current) {
+  background-color: rgba(247, 168, 58, 0.95);
+  color: #141413;
+}
+mark.folio-find {
+  background-color: rgba(246, 200, 80, 0.55);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0;
+}
+mark.folio-find.current {
+  background-color: rgba(247, 168, 58, 0.95);
+  color: #141413;
+}

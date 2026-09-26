@@ -28,7 +28,7 @@ export function taskLists(md: MarkdownIt): void {
       const item = tokens[i - 2];
       item.attrJoin("class", "task-list-item");
       const list = findListOpen(tokens, i - 2);
-      if (list && !list.attrGet("class")?.includes("contains-task-list")) {
+      if (list && !String(list.attrGet("class") ?? "").includes("contains-task-list")) {
         list.attrJoin("class", "contains-task-list");
       }
     }

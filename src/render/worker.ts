@@ -1,4 +1,3 @@
-/// <reference lib="webworker" />
 /**
  * The render worker: parsing and highlighting never block the main thread.
  * Requests for the same document supersede each other; errors stay
@@ -7,12 +6,15 @@
 import { highlightPending, renderDocument, warm } from "./renderer";
 import type { WorkerRequest, WorkerResponse } from "./types";
 
-declare const self: DedicatedWorkerGlobalScope;
+const scope = self as unknown as {
+  postMessage(message: unknown): void;
+  onmessage: ((event: MessageEvent<WorkerRequest>) => void) | null;
+};
 
 const latest = new Map<string, number>();
 
 function post(message: WorkerResponse) {
-  self.postMessage(message);
+  scope.postMessage(message);
 }
 
 async function handleRender(req: Extract<WorkerRequest, { type: "render" }>) {
@@ -37,7 +39,7 @@ async function handleRender(req: Extract<WorkerRequest, { type: "render" }>) {
   }
 }
 
-self.onmessage = (event: MessageEvent<WorkerRequest>) => {
+scope.onmessage = (event: MessageEvent<WorkerRequest>) => {
   const req = event.data;
   if (req.type === "render") void handleRender(req);
   else if (req.type === "warm") void warm(req.langs);

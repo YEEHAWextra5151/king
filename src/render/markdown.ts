@@ -18,6 +18,7 @@ export type RenderHooks = CodeHooks;
 
 /** Per-render state threaded through markdown-it's `env`. */
 export interface RenderEnv {
+  [key: string | symbol]: unknown;
   hooks: RenderHooks;
   frontMatterMode: RenderOptions["frontMatter"];
   headings?: Heading[];

@@ -1,0 +1,193 @@
+/*
+ * Code blocks (Shiki) and the Code view (CodeMirror) share one syntax
+ * palette, defined by the theme as --syn-* and mapped here onto Shiki's
+ * CSS-variables theme.
+ */
+:root {
+  --shiki-foreground: var(--syn-text);
+  --shiki-background: transparent;
+  --shiki-token-keyword: var(--syn-keyword);
+  --shiki-token-string: var(--syn-string);
+  --shiki-token-string-expression: var(--syn-string);
+  --shiki-token-constant: var(--syn-number);
+  --shiki-token-function: var(--syn-function);
+  --shiki-token-comment: var(--syn-comment);
+  --shiki-token-punctuation: var(--syn-punctuation);
+  --shiki-token-parameter: var(--syn-text);
+  --shiki-token-link: var(--link);
+  --shiki-token-inserted: var(--success-text);
+  --shiki-token-deleted: var(--danger-text);
+  --shiki-token-changed: var(--warning-text);
+}
+
+.markdown-body .code-block {
+  position: relative;
+  border-radius: 8px;
+  background: var(--recessed);
+  border: 0.5px solid var(--hairline);
+}
+.markdown-body .code-block pre {
+  margin: 0;
+  padding: 0.95em 1.1em;
+  overflow-x: auto;
+  font-family: var(--font-code);
+  font-size: var(--code-size);
+  line-height: 1.55;
+  tab-size: 4;
+  color: var(--syn-text);
+  background: transparent !important;
+  outline: none;
+  border-radius: 8px;
+}
+.markdown-body .code-block pre:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--focus-ring);
+}
+.markdown-body .code-block code {
+  font-size: 1em;
+  font-family: inherit;
+  white-space: pre;
+}
+/* Comments are italic (Shiki's css-variables theme sets it inline too). */
+.markdown-body .code-block [style*="--shiki-token-comment"] {
+  font-style: italic;
+}
+
+/* Language label and copy button: shown on hover, never taking space. */
+.markdown-body .code-header {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  pointer-events: none;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  line-height: 1;
+  user-select: none;
+  -webkit-user-select: none;
+  z-index: 1;
+}
+.markdown-body .code-block:hover .code-header,
+.markdown-body .code-block:focus-within .code-header {
+  opacity: 1;
+  pointer-events: auto;
+}
+.markdown-body .code-lang {
+  color: var(--text-tertiary);
+  letter-spacing: 0.01em;
+}
+.markdown-body .code-lang:empty {
+  display: none;
+}
+.markdown-body .code-copy {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 22px;
+  padding: 0;
+  border: 0.5px solid var(--hairline);
+  border-radius: 6px;
+  background: var(--raised);
+  color: var(--text-secondary);
+  cursor: default;
+  box-shadow: 0 1px 1.5px rgba(0, 0, 0, 0.06);
+}
+.markdown-body .code-copy:hover {
+  color: var(--text);
+}
+.markdown-body .code-copy:active {
+  background: var(--recessed);
+}
+.markdown-body .code-copy.copied {
+  color: var(--success-text);
+}
+
+/* ─── CodeMirror (Code view) ────────────────────────────────────────────── */
+.code-pane {
+  position: absolute;
+  inset: 0;
+  background: var(--surface);
+}
+.code-pane .cm-editor {
+  height: 100%;
+  background: var(--surface);
+  color: var(--syn-text);
+  font-size: calc(14px * var(--doc-zoom));
+}
+.code-pane .cm-editor.cm-focused {
+  outline: none;
+}
+.code-pane .cm-scroller {
+  font-family: var(--font-code);
+  line-height: 1.6;
+  overscroll-behavior: contain;
+}
+.code-pane .cm-content {
+  padding: 16px 0 40vh;
+  caret-color: var(--accent);
+}
+.code-pane .cm-line {
+  padding: 0 24px 0 12px;
+}
+.code-pane .cm-gutters {
+  background: var(--surface);
+  color: var(--text-tertiary);
+  border-right: 0.5px solid var(--hairline);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.code-pane .cm-lineNumbers .cm-gutterElement {
+  padding: 0 10px 0 16px;
+  min-width: 2.5em;
+  font-variant-numeric: tabular-nums;
+}
+.code-pane .cm-foldGutter .cm-gutterElement {
+  padding: 0 6px 0 0;
+  color: var(--text-tertiary);
+  cursor: default;
+}
+.code-pane .cm-activeLine {
+  background: color-mix(in srgb, var(--recessed) 60%, transparent);
+}
+.code-pane .cm-activeLineGutter {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.code-pane .cm-selectionBackground,
+.code-pane .cm-focused .cm-selectionBackground,
+.code-pane .cm-content ::selection {
+  background: var(--selection) !important;
+}
+.code-pane .cm-cursor {
+  border-left: 2px solid var(--accent);
+}
+.code-pane .cm-foldPlaceholder {
+  background: var(--recessed);
+  border: 0.5px solid var(--hairline);
+  color: var(--text-tertiary);
+  border-radius: 4px;
+  padding: 0 4px;
+  margin: 0 2px;
+}
+.code-pane .cm-searchMatch {
+  background: rgba(246, 200, 80, 0.5);
+  border-radius: 2px;
+}
+.code-pane .cm-searchMatch-selected {
+  background: rgba(247, 168, 58, 0.95);
+  color: #141413;
+}
+.code-pane .cm-highlight-line {
+  animation: folio-line-flash 1.4s ease-out;
+}
+@keyframes folio-line-flash {
+  from {
+    background: rgba(217, 119, 87, 0.22);
+  }
+  to {
+    background: transparent;
+  }
+}

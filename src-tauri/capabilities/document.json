@@ -27,6 +27,7 @@
     "allow-locate-file",
     "allow-move-tab-to-new-window",
     "allow-merge-windows",
+    "allow-list-open-documents",
     "allow-reveal-in-finder",
     "allow-open-external",
     "allow-open-in-editor",

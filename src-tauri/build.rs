@@ -22,6 +22,7 @@ const COMMANDS: &[&str] = &[
     "locate_file",
     "move_tab_to_new_window",
     "merge_windows",
+    "list_open_documents",
     "reveal_in_finder",
     "open_external",
     "open_in_editor",

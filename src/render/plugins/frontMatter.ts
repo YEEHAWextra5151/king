@@ -12,7 +12,7 @@ export function frontMatter(md: MarkdownIt): void {
 
   md.renderer.rules.front_matter = (tokens, idx, _options, env) => {
     const token = tokens[idx];
-    const fm = token.meta as FrontMatter;
+    const fm = token.meta as unknown as FrontMatter;
     const e = env as { frontMatter?: FrontMatter; frontMatterMode?: string };
     e.frontMatter = fm;
     if (e.frontMatterMode !== "card" || fm.entries.length === 0) return "";

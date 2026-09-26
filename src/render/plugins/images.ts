@@ -31,7 +31,7 @@ export function images(md: MarkdownIt): void {
       for (const c of t.children ?? []) {
         if (c.type === "image") {
           const src = c.attrGet("src");
-          if (src) found.add(src);
+          if (src) found.add(String(src));
         } else if (c.type === "html_inline") {
           scanHtml(c.content);
         }

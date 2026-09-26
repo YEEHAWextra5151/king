@@ -71,6 +71,18 @@ export function commitBlocks(
   return { changed, initial: false };
 }
 
+/** Block hashes of a container's children (for caching a rendered tab). */
+export function hashesOf(container: Element): string[] {
+  return Array.from(container.children, (el) => blockHashes.get(el) ?? "");
+}
+
+/** Re-associates hashes with children restored from cached HTML. */
+export function adoptHashes(container: Element, hashes: string[]) {
+  Array.from(container.children).forEach((el, i) => {
+    if (hashes[i]) blockHashes.set(el, hashes[i]);
+  });
+}
+
 /** Copies source-line attributes from a fresh render onto a reused block. */
 function syncLines(target: Element, source: Element) {
   const copy = (to: Element, from: Element) => {
