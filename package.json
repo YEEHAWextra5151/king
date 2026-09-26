@@ -29,6 +29,7 @@
     "markdown-it-footnote": "^4.0.0",
     "markdown-it-github-alerts": "^1.0.1",
     "mermaid": "~11.17.2",
+    "oniguruma-to-es": "4.3.6",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "shiki": "^4.4.3",

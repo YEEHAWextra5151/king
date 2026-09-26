@@ -48,8 +48,17 @@ const loaded = new Set<string>();
 const loading = new Map<string, Promise<void>>();
 
 function loadCore(): Promise<ShikiCore> {
-  shikiLoading ??= import("./shikiCore").then((mod) => (shiki = mod));
+  shikiLoading ??= import("./shikiCore").then(async (mod) => {
+    await mod.cacheReady;
+    shiki = mod;
+    return mod;
+  });
   return shikiLoading;
+}
+
+/** Call after a batch of highlighting, so new regex translations are kept. */
+export function highlighted(): void {
+  shiki?.persist();
 }
 
 /** Canonical Shiki id for a fence name, or null for plain text/unknown. */

@@ -5,6 +5,10 @@
  */
 import { createCssVariablesTheme, createHighlighterCoreSync, type HighlighterCore } from "shiki/core";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
+import { constructRegex, loadRegexCache, scheduleRegexCacheSave } from "./regexCache";
+
+/** Saved regex translations are loaded before the first highlight. */
+export const cacheReady = loadRegexCache();
 
 export const THEME = "folio";
 
@@ -21,7 +25,7 @@ function core(): HighlighterCore {
   highlighter ??= createHighlighterCoreSync({
     themes: [theme],
     langs: [],
-    engine: createJavaScriptRegexEngine({ forgiving: true }),
+    engine: createJavaScriptRegexEngine({ forgiving: true, regexConstructor: constructRegex }),
   });
   return highlighter;
 }
@@ -32,4 +36,9 @@ export function loadLanguage(grammar: never): Promise<void> {
 
 export function highlight(code: string, id: string): string {
   return core().codeToHtml(code, { lang: id, theme: THEME });
+}
+
+/** Persists regex translations made since the last save (debounced). */
+export function persist(): void {
+  scheduleRegexCacheSave();
 }

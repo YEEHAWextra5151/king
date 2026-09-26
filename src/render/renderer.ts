@@ -130,6 +130,7 @@ export async function renderDocument(text: string, options: RenderOptions): Prom
 
   const html = md.renderer.render(tokens, md.options, env);
   const t2 = performance.now();
+  hl.highlighted();
 
   // Duplicate code blocks share a key; highlight each once.
   const uniquePending = [...new Map(pending.map((p) => [p.key, p])).values()];
@@ -169,6 +170,7 @@ export function highlightPending(pending: PendingHighlight[]): { key: string; ht
     }
     out.push({ key: p.key, html: inner });
   }
+  hl.highlighted();
   return out;
 }
 

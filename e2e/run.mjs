@@ -803,6 +803,29 @@ const scenarios = {
     }
   },
 
+  async print() {
+    const s = await open({ pending: [doc("README.md"), doc("docs/guide.md")] });
+    const { page } = s;
+    await waitRendered(page);
+    await page.click(".tab >> nth=0");
+    await waitRendered(page);
+    await page.waitForSelector(".mermaid-diagram svg", { timeout: 15000 }).catch(() => {});
+    await page.emulateMedia({ media: "print" });
+    await frames(page);
+    const state = await page.evaluate(() => ({
+      toolbar: getComputedStyle(document.querySelector(".toolbar")).display,
+      background: getComputedStyle(document.body).backgroundColor,
+      visibleDocs: [...document.querySelectorAll(".tab-view")].filter((t) => getComputedStyle(t).display !== "none").length,
+      height: document.documentElement.scrollHeight,
+    }));
+    check("print: no chrome", state.toolbar === "none");
+    check("print: white paper", state.background === "rgb(255, 255, 255)", state.background);
+    check("print: only the active document", state.visibleDocs === 1, `visible ${state.visibleDocs}`);
+    check("print: whole document flows (no inner scroller)", state.height > 1500, `height ${state.height}`);
+    await page.screenshot({ path: join(OUT, "print.png"), fullPage: true });
+    await s.finish("print");
+  },
+
   async help() {
     const s = await open({ pending: [doc("help.md")] });
     const { page } = s;
