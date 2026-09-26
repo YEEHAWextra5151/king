@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-merge-windows"
+description = "Enables the merge_windows command without any pre-configured scope."
+commands.allow = ["merge_windows"]
+
+[[permission]]
+identifier = "deny-merge-windows"
+description = "Denies the merge_windows command without any pre-configured scope."
+commands.deny = ["merge_windows"]

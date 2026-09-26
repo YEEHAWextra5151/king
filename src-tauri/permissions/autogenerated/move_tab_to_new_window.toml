@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-move-tab-to-new-window"
+description = "Enables the move_tab_to_new_window command without any pre-configured scope."
+commands.allow = ["move_tab_to_new_window"]
+
+[[permission]]
+identifier = "deny-move-tab-to-new-window"
+description = "Denies the move_tab_to_new_window command without any pre-configured scope."
+commands.deny = ["move_tab_to_new_window"]

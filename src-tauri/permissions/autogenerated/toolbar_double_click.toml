@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-toolbar-double-click"
+description = "Enables the toolbar_double_click command without any pre-configured scope."
+commands.allow = ["toolbar_double_click"]
+
+[[permission]]
+identifier = "deny-toolbar-double-click"
+description = "Denies the toolbar_double_click command without any pre-configured scope."
+commands.deny = ["toolbar_double_click"]
