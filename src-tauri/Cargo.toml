@@ -1,0 +1,65 @@
+[package]
+name = "folio"
+version = "0.1.0"
+description = "A native Markdown viewer for macOS"
+authors = ["Folio contributors"]
+license = "MIT"
+edition = "2021"
+rust-version = "1.80"
+
+[lib]
+# The `_lib` suffix keeps the lib name distinct from the bin name (cargo#8519).
+name = "folio_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6", features = [] }
+
+[dependencies]
+tauri = { version = "2.11", features = ["macos-private-api", "protocol-asset"] }
+tauri-plugin-dialog = "2.7"
+tauri-plugin-opener = "2.5"
+tauri-plugin-deep-link = "2.4"
+tauri-plugin-store = "2.4"
+tauri-plugin-log = "2.9"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+notify = "8.2"
+notify-debouncer-full = "0.7"
+ignore = "0.4"
+log = "0.4"
+encoding_rs = "0.8"
+url = "2.5"
+percent-encoding = "2.3"
+dunce = "1.0"
+thiserror = "2"
+parking_lot = "0.12"
+libc = "0.2"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+block2 = "0.6"
+objc2-foundation = { version = "0.3", features = [
+  "NSArray", "NSData", "NSDictionary", "NSError", "NSString", "NSURL",
+  "NSUserDefaults", "NSValue", "NSGeometry", "NSObject", "NSEnumerator",
+  "NSFileManager", "NSThread", "block2",
+] }
+objc2-app-kit = { version = "0.3", features = [
+  "NSApplication", "NSAppearance", "NSBitmapImageRep", "NSButton", "NSColor",
+  "NSControl", "NSDocumentController", "NSGraphics", "NSGraphicsContext",
+  "NSImage", "NSImageRep", "NSOpenPanel", "NSPanel", "NSPasteboard",
+  "NSResponder", "NSRunningApplication", "NSSavePanel", "NSScreen", "NSView",
+  "NSWindow", "NSWorkspace", "block2", "objc2-uniform-type-identifiers",
+] }
+objc2-uniform-type-identifiers = { version = "0.3", features = ["UTType", "UTCoreTypes"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+# See https://tauri.app/concept/size/#cargo-configuration
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true

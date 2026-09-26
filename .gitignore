@@ -1,0 +1,25 @@
+# Dependencies & builds
+node_modules
+dist
+dist-ssr
+*.local
+src-tauri/target
+src-tauri/gen/schemas
+
+# Test output
+test-results
+playwright-report
+coverage
+perf-results
+
+# Logs
+logs
+*.log
+
+# Editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.sw?
