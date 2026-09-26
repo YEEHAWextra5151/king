@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-popup-path-menu"
+description = "Enables the popup_path_menu command without any pre-configured scope."
+commands.allow = ["popup_path_menu"]
+
+[[permission]]
+identifier = "deny-popup-path-menu"
+description = "Denies the popup_path_menu command without any pre-configured scope."
+commands.deny = ["popup_path_menu"]

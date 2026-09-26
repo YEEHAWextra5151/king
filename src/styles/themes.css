@@ -1,0 +1,198 @@
+/*
+ * The two alternate built-in themes. Both override only tokens (and a few
+ * document rules), so all chrome adapts automatically.
+ */
+
+/* ─── GitHub: the github-markdown-css look ─────────────────────────────── */
+:root[data-theme="github"] {
+  --surface: #ffffff;
+  --chrome: #f6f8fa;
+  --recessed: #f6f8fa;
+  --raised: #ffffff;
+  --text: #1f2328;
+  --text-heading: #1f2328;
+  --text-secondary: #59636e;
+  --text-tertiary: #59636e;
+  --hairline: #d1d9e0;
+  --hairline-strong: #d1d9e0;
+  --accent: #0969da;
+  --link: #0969da;
+  --selection: rgba(9, 105, 218, 0.2);
+  --focus-ring: rgba(9, 105, 218, 0.6);
+  --info-text: #0969da;
+  --info-tint: #ddf4ff;
+  --success-text: #1a7f37;
+  --success-tint: #dafbe1;
+  --warning-text: #9a6700;
+  --warning-tint: #fff8c5;
+  --danger-text: #d1242f;
+  --danger-tint: #ffebe9;
+  --syn-keyword: #cf222e;
+  --syn-string: #0a3069;
+  --syn-number: #0550ae;
+  --syn-function: #6639ba;
+  --syn-comment: #59636e;
+  --syn-punctuation: #1f2328;
+  --syn-text: #1f2328;
+  --mermaid-surface: #ffffff;
+  --mermaid-node: #f6f8fa;
+  --mermaid-node-alt: #ffffff;
+  --mermaid-node-tertiary: #ffffff;
+  --mermaid-text: #1f2328;
+  --mermaid-border: #d1d9e0;
+  --mermaid-line: #59636e;
+  --doc-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --doc-size: 16px;
+  --doc-line-height: 1.5;
+  --code-size: 85%;
+  --doc-width: 980px;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="github"] {
+    --surface: #0d1117;
+    --chrome: #010409;
+    --recessed: #151b23;
+    --raised: #151b23;
+    --text: #f0f6fc;
+    --text-heading: #f0f6fc;
+    --text-secondary: #9198a1;
+    --text-tertiary: #9198a1;
+    --hairline: #3d444d;
+    --hairline-strong: #3d444d;
+    --accent: #4493f8;
+    --link: #4493f8;
+    --selection: rgba(68, 147, 248, 0.3);
+    --focus-ring: rgba(68, 147, 248, 0.6);
+    --info-text: #4493f8;
+    --info-tint: #0d2240;
+    --success-text: #3fb950;
+    --success-tint: #0f2c19;
+    --warning-text: #d29922;
+    --warning-tint: #2e2410;
+    --danger-text: #f85149;
+    --danger-tint: #3a1719;
+    --syn-keyword: #ff7b72;
+    --syn-string: #a5d6ff;
+    --syn-number: #79c0ff;
+    --syn-function: #d2a8ff;
+    --syn-comment: #9198a1;
+    --syn-punctuation: #f0f6fc;
+    --syn-text: #f0f6fc;
+    --mermaid-surface: #0d1117;
+    --mermaid-node: #151b23;
+    --mermaid-node-alt: #0d1117;
+    --mermaid-node-tertiary: #0d1117;
+    --mermaid-text: #f0f6fc;
+    --mermaid-border: #3d444d;
+    --mermaid-line: #9198a1;
+  }
+}
+:root[data-theme="github"][data-width="narrow"] {
+  --doc-width: 700px;
+}
+:root[data-theme="github"][data-width="wide"] {
+  --doc-width: 1200px;
+}
+:root[data-theme="github"][data-width="full"] {
+  --doc-width: none;
+}
+:root[data-theme="github"] .markdown-body h1,
+:root[data-theme="github"] .markdown-body h2 {
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--hairline);
+}
+:root[data-theme="github"] .markdown-body h1 {
+  font-size: 2em;
+}
+:root[data-theme="github"] .markdown-body h2 {
+  font-size: 1.5em;
+}
+:root[data-theme="github"] .markdown-body h3 {
+  font-size: 1.25em;
+}
+:root[data-theme="github"] .markdown-body h4 {
+  font-size: 1em;
+}
+:root[data-theme="github"] .markdown-body code:not(pre code) {
+  border: none;
+  border-radius: 6px;
+  padding: 0.2em 0.4em;
+}
+:root[data-theme="github"] .markdown-body .code-block {
+  border: none;
+  border-radius: 6px;
+}
+:root[data-theme="github"] .markdown-body blockquote {
+  border-left-width: 0.25em;
+}
+:root[data-theme="github"] .markdown-body table th,
+:root[data-theme="github"] .markdown-body table td {
+  border: 1px solid var(--hairline);
+}
+
+/* ─── Paper: plain white or black, sans ───────────────────────────────── */
+:root[data-theme="paper"] {
+  --surface: #ffffff;
+  --chrome: #f5f5f5;
+  --recessed: #f4f4f4;
+  --raised: #ffffff;
+  --text: #111111;
+  --text-heading: #000000;
+  --text-secondary: #444444;
+  --text-tertiary: #6b6b6b;
+  --hairline: rgba(0, 0, 0, 0.14);
+  --hairline-strong: rgba(0, 0, 0, 0.3);
+  --accent: #0a64d6;
+  --link: #0a5cc5;
+  --selection: rgba(10, 100, 214, 0.2);
+  --focus-ring: rgba(10, 100, 214, 0.55);
+  --syn-keyword: #9a2f86;
+  --syn-string: #1c6a1c;
+  --syn-number: #1d58a6;
+  --syn-function: #6b4b00;
+  --syn-comment: #616161;
+  --syn-punctuation: #444444;
+  --syn-text: #111111;
+  --mermaid-surface: #ffffff;
+  --mermaid-node: #f4f4f4;
+  --mermaid-node-alt: #fafafa;
+  --mermaid-node-tertiary: #ffffff;
+  --mermaid-text: #111111;
+  --mermaid-border: #b3b3b3;
+  --mermaid-line: #6b6b6b;
+  --doc-font: -apple-system, BlinkMacSystemFont, system-ui, "Helvetica Neue", sans-serif;
+  --doc-size: 16px;
+  --doc-line-height: 1.6;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="paper"] {
+    --surface: #000000;
+    --chrome: #121212;
+    --recessed: #161616;
+    --raised: #1c1c1c;
+    --text: #ededed;
+    --text-heading: #ffffff;
+    --text-secondary: #bdbdbd;
+    --text-tertiary: #9a9a9a;
+    --hairline: rgba(255, 255, 255, 0.16);
+    --hairline-strong: rgba(255, 255, 255, 0.32);
+    --accent: #4a9eff;
+    --link: #5aa8ff;
+    --selection: rgba(74, 158, 255, 0.35);
+    --focus-ring: rgba(74, 158, 255, 0.6);
+    --syn-keyword: #f28ad7;
+    --syn-string: #8fd18f;
+    --syn-number: #8ab8ff;
+    --syn-function: #e5c07b;
+    --syn-comment: #9a9a9a;
+    --syn-punctuation: #bdbdbd;
+    --syn-text: #ededed;
+    --mermaid-surface: #000000;
+    --mermaid-node: #161616;
+    --mermaid-node-alt: #0d0d0d;
+    --mermaid-node-tertiary: #000000;
+    --mermaid-text: #ededed;
+    --mermaid-border: #555555;
+    --mermaid-line: #9a9a9a;
+  }
+}

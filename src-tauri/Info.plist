@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Merged into the bundle's Info.plist by the Tauri bundler (top-level keys
+	  replace generated ones, so document types live in tauri.conf.json).
+	-->
+	<key>UTImportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>net.daringfireball.markdown</string>
+			<key>UTTypeDescription</key>
+			<string>Markdown Document</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.plain-text</string>
+			</array>
+			<key>UTTypeReferenceURL</key>
+			<string>https://daringfireball.net/projects/markdown/</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>md</string>
+					<string>markdown</string>
+					<string>mdown</string>
+					<string>mkd</string>
+					<string>mkdn</string>
+					<string>mdwn</string>
+					<string>mdtxt</string>
+					<string>mdtext</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>text/markdown</string>
+					<string>text/x-markdown</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	<key>LSMultipleInstancesProhibited</key>
+	<true/>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>Folio reads documents on your Desktop to show images and linked files next to them.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>Folio reads documents in your Documents folder to show images and linked files next to them.</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>Folio reads documents in your Downloads folder to show images and linked files next to them.</string>
+	<key>NSRemovableVolumesUsageDescription</key>
+	<string>Folio reads documents on removable volumes to show images and linked files next to them.</string>
+	<key>NSNetworkVolumesUsageDescription</key>
+	<string>Folio reads documents on network volumes to show images and linked files next to them.</string>
+</dict>
+</plist>

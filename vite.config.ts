@@ -1,32 +1,39 @@
+import { readFileSync } from "node:fs";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-// @ts-expect-error type error without @types/node package
-import process from "node:process";
+
+// Saved regex translations (src/render/regexCache.ts) are keyed by the
+// translator's version.
+const regexEngineVersion = JSON.parse(
+  readFileSync(new URL("./node_modules/oniguruma-to-es/package.json", import.meta.url), "utf8"),
+).version as string;
+
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
-export default defineConfig(() => ({
+export default defineConfig({
   plugins: [react()],
-
-  // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
-  //
-  // 1. prevent Vite from obscuring rust errors
+  define: {
+    __REGEX_ENGINE_VERSION__: JSON.stringify(regexEngineVersion),
+  },
+  // Keep Rust errors visible during `tauri dev`.
   clearScreen: false,
-  // 2. tauri expects a fixed port, fail if that port is not available
   server: {
     port: 1420,
     strictPort: true,
     host: host || false,
-    hmr: host
-      ? {
-          protocol: "ws",
-          host,
-          port: 1421,
-        }
-      : undefined,
-    watch: {
-      // 3. tell Vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
-    },
+    hmr: host ? { protocol: "ws", host, port: 1421 } : undefined,
+    watch: { ignored: ["**/src-tauri/**"] },
   },
-}));
+  envPrefix: ["VITE_", "TAURI_ENV_*"],
+  build: {
+    // macOS 13's WebKit.
+    target: ["safari16"],
+    sourcemap: false,
+    chunkSizeWarningLimit: 4096,
+    reportCompressedSize: false,
+  },
+  worker: {
+    format: "es",
+  },
+});

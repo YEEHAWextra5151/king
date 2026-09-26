@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-take-window-init"
+description = "Enables the take_window_init command without any pre-configured scope."
+commands.allow = ["take_window_init"]
+
+[[permission]]
+identifier = "deny-take-window-init"
+description = "Denies the take_window_init command without any pre-configured scope."
+commands.deny = ["take_window_init"]

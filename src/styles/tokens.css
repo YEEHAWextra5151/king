@@ -1,0 +1,165 @@
+/*
+ * The "Claude" theme: Claude's warm ivory reading surface, warm near-black
+ * text, and Claude orange as the only accent. Light/dark follow the native
+ * window appearance (which Folio sets when the user forces Light or Dark),
+ * so `prefers-color-scheme` is the single source of truth.
+ *
+ * Syntax colors are checked for 4.5:1 on `--recessed` (see DECISIONS.md):
+ * light keyword #B4532F → #AE502D and comment #73726C → #6C6B66 were nudged.
+ */
+:root {
+  color-scheme: light dark;
+
+  --surface: #faf9f5;
+  --chrome: #f5f4ed;
+  --recessed: #f0eee6;
+  --raised: #ffffff;
+  --text: #141413;
+  --text-heading: #141413;
+  --text-secondary: #3d3d3a;
+  --text-tertiary: #73726c;
+  --hairline: rgba(31, 30, 29, 0.15);
+  --hairline-strong: rgba(31, 30, 29, 0.3);
+  --accent: #d97757;
+  /* Filled controls carrying white text (primary buttons, selected rows):
+     white on --accent is only 3.1:1, on this deeper terracotta 5:1. */
+  --accent-fill: #b4532f;
+  --accent-contrast: #ffffff;
+  --link: #b4532f;
+  --selection: rgba(217, 119, 87, 0.25);
+  --focus-ring: rgba(217, 119, 87, 0.6);
+  --shadow: 0 0 0 0.5px rgba(31, 30, 29, 0.12), 0 8px 28px rgba(31, 30, 29, 0.14);
+  --shadow-small: 0 0 0 0.5px rgba(31, 30, 29, 0.12), 0 2px 8px rgba(31, 30, 29, 0.1);
+
+  --info-text: #3266ad;
+  --info-tint: #d6e4f6;
+  --success-text: #265b19;
+  --success-tint: #e9f1dc;
+  --warning-text: #5a4815;
+  --warning-tint: #f6eedf;
+  --danger-text: #7f2c28;
+  --danger-tint: #f7ecec;
+
+  /* One syntax palette for Shiki and CodeMirror. */
+  --syn-keyword: #ae502d;
+  --syn-string: #265b19;
+  --syn-number: #3266ad;
+  --syn-function: #5a4815;
+  --syn-comment: #6c6b66;
+  --syn-punctuation: #3d3d3a;
+  --syn-text: #141413;
+
+  /* Mermaid needs solid colors. */
+  --mermaid-surface: #faf9f5;
+  --mermaid-node: #f0eee6;
+  --mermaid-node-alt: #f5f4ed;
+  --mermaid-node-tertiary: #ffffff;
+  --mermaid-text: #141413;
+  --mermaid-border: #b5b3aa;
+  --mermaid-line: #73726c;
+  --mermaid-note: #f6eedf;
+  --mermaid-note-text: #5a4815;
+  --mermaid-note-border: #d8c49a;
+
+  --font-body: "Anthropic Serif", ui-serif, Georgia, serif;
+  --font-sans: "Anthropic Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  --font-ui: -apple-system, BlinkMacSystemFont, system-ui, "Helvetica Neue", sans-serif;
+  --font-code: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+
+  --doc-font: var(--font-body);
+  --doc-size: 17px;
+  --doc-line-height: 1.65;
+  --doc-zoom: 1;
+  --doc-width: 72ch;
+  --heading-weight: 600;
+  --code-size: calc(14em / 17);
+
+  --toolbar-height: 44px;
+  --traffic-light-inset: 78px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #262624;
+    --chrome: #1f1e1d;
+    --recessed: #1f1e1d;
+    --raised: #30302e;
+    --text: #e8e6dc;
+    --text-heading: #faf9f5;
+    --text-secondary: #c2c0b6;
+    --text-tertiary: #9c9a92;
+    --hairline: rgba(222, 220, 209, 0.15);
+    --hairline-strong: rgba(222, 220, 209, 0.3);
+    --accent: #d97757;
+    --link: #d97757;
+    --selection: rgba(217, 119, 87, 0.35);
+    --shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.5), 0 10px 32px rgba(0, 0, 0, 0.45);
+    --shadow-small: 0 0 0 0.5px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.35);
+
+    --info-text: #80aadd;
+    --info-tint: #253e5f;
+    --success-text: #7ab948;
+    --success-tint: #1b4614;
+    --warning-text: #d1a041;
+    --warning-tint: #483a0f;
+    --danger-text: #ee8884;
+    --danger-tint: #602a28;
+
+    --syn-keyword: #d97757;
+    --syn-string: #7ab948;
+    --syn-number: #80aadd;
+    --syn-function: #d1a041;
+    --syn-comment: #9c9a92;
+    --syn-punctuation: #c2c0b6;
+    --syn-text: #e8e6dc;
+
+    --mermaid-surface: #262624;
+    --mermaid-node: #30302e;
+    --mermaid-node-alt: #1f1e1d;
+    --mermaid-node-tertiary: #262624;
+    --mermaid-text: #e8e6dc;
+    --mermaid-border: #6f6e69;
+    --mermaid-line: #9c9a92;
+    --mermaid-note: #483a0f;
+    --mermaid-note-text: #d1a041;
+    --mermaid-note-border: #6b5718;
+  }
+}
+
+/* Increase Contrast: stronger hairlines and secondary text. */
+@media (prefers-contrast: more) {
+  :root {
+    --hairline: rgba(31, 30, 29, 0.32);
+    --hairline-strong: rgba(31, 30, 29, 0.55);
+    --text-secondary: #262624;
+    --text-tertiary: #53524d;
+    --syn-comment: #53524d;
+  }
+}
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  :root {
+    --hairline: rgba(222, 220, 209, 0.34);
+    --hairline-strong: rgba(222, 220, 209, 0.6);
+    --text-secondary: #dedcd1;
+    --text-tertiary: #b9b7ae;
+    --syn-comment: #b9b7ae;
+  }
+}
+
+/* Reading settings (set as attributes on <html> before first paint). */
+:root[data-font="sans"] {
+  --doc-font: var(--font-sans);
+}
+:root[data-font="mono"] {
+  --doc-font: var(--font-mono);
+}
+:root[data-width="narrow"] {
+  --doc-width: 60ch;
+}
+:root[data-width="wide"] {
+  --doc-width: 90ch;
+}
+:root[data-width="full"] {
+  --doc-width: none;
+}

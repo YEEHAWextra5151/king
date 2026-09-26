@@ -32,9 +32,6 @@ importers:
       '@lezer/highlight':
         specifier: ^1.2.4
         version: 1.2.4
-      '@shikijs/langs-precompiled':
-        specifier: 4.4.3
-        version: 4.4.3
       '@tauri-apps/api':
         specifier: ^2.11.1
         version: 2.11.1
@@ -62,6 +59,9 @@ importers:
       mermaid:
         specifier: ~11.17.2
         version: 11.17.2
+      oniguruma-to-es:
+        specifier: 4.3.6
+        version: 4.3.6
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -457,10 +457,6 @@ packages:
 
   '@shikijs/engine-oniguruma@4.4.3':
     resolution: {integrity: sha512-EcOQkxdxGQrc1Row/cC2c96/v1dbZqGnEVu1qTuT/MJmp6+cXCvQussowVmCv5Tqr3KuY3c7IbM6HTW3LJ1k9w==}
-    engines: {node: '>=20'}
-
-  '@shikijs/langs-precompiled@4.4.3':
-    resolution: {integrity: sha512-i3+91QcqVBji2mlCinQpHQyoZfciaWsHCuv5XZwMXGEmSAMCW0oCdrWp+zMKLf0CwHd9XT+E5RBDJ0RY1USWCw==}
     engines: {node: '>=20'}
 
   '@shikijs/langs@4.4.3':
@@ -2163,11 +2159,6 @@ snapshots:
     dependencies:
       '@shikijs/types': 4.4.3
       '@shikijs/vscode-textmate': 10.0.2
-
-  '@shikijs/langs-precompiled@4.4.3':
-    dependencies:
-      '@shikijs/types': 4.4.3
-      oniguruma-to-es: 4.3.6
 
   '@shikijs/langs@4.4.3':
     dependencies:

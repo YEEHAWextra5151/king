@@ -1,0 +1,25 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "settings-window",
+  "description": "The Settings window: read and change settings only.",
+  "windows": ["settings"],
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "core:window:allow-set-title",
+    "allow-take-window-init",
+    "allow-window-ready",
+    "allow-frontend-log",
+    "allow-close-window",
+    "allow-get-settings",
+    "allow-update-settings",
+    "allow-reset-settings",
+    "allow-list-themes",
+    "allow-open-themes-folder",
+    "allow-list-editors",
+    "allow-show-logs-folder",
+    "allow-default-app-status",
+    "allow-make-default-app",
+    "allow-install-cli"
+  ]
+}

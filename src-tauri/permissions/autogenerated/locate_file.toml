@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-locate-file"
+description = "Enables the locate_file command without any pre-configured scope."
+commands.allow = ["locate_file"]
+
+[[permission]]
+identifier = "deny-locate-file"
+description = "Denies the locate_file command without any pre-configured scope."
+commands.deny = ["locate_file"]

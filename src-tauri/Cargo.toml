@@ -35,6 +35,8 @@ dunce = "1.0"
 thiserror = "2"
 parking_lot = "0.12"
 libc = "0.2"
+base64 = "0.22"
+imagesize = "0.15"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"
@@ -42,7 +44,7 @@ block2 = "0.6"
 objc2-foundation = { version = "0.3", features = [
   "NSArray", "NSData", "NSDictionary", "NSError", "NSString", "NSURL",
   "NSUserDefaults", "NSValue", "NSGeometry", "NSObject", "NSEnumerator",
-  "NSFileManager", "NSThread", "block2",
+  "NSFileManager", "NSThread", "NSBundle", "block2",
 ] }
 objc2-app-kit = { version = "0.3", features = [
   "NSApplication", "NSAppearance", "NSBitmapImageRep", "NSButton", "NSColor",
@@ -54,6 +56,7 @@ objc2-app-kit = { version = "0.3", features = [
 objc2-uniform-type-identifiers = { version = "0.3", features = ["UTType", "UTCoreTypes"] }
 
 [dev-dependencies]
+muda = { version = "0.19", default-features = false }
 tempfile = "3"
 
 # See https://tauri.app/concept/size/#cargo-configuration

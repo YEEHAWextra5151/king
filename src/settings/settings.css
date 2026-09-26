@@ -1,0 +1,123 @@
+/* The Settings window: toolbar panes and a right-aligned-label form. */
+.settings {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--chrome);
+  color: var(--text);
+}
+.settings-toolbar {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 12px 6px;
+  border-bottom: 0.5px solid var(--hairline);
+  background: var(--chrome);
+}
+.settings-toolbar button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 76px;
+  padding: 6px 8px 5px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--icon);
+  font-size: 11px;
+}
+.settings-toolbar button span {
+  color: var(--text-secondary);
+}
+.settings-toolbar button:hover {
+  background: var(--hover);
+}
+.settings-toolbar button.is-selected {
+  background: var(--selected-row);
+  color: var(--accent);
+}
+.settings-toolbar button.is-selected span {
+  color: var(--text);
+}
+.settings-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px 28px 28px;
+  background: var(--surface);
+}
+.form {
+  display: grid;
+  gap: 14px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 36% 1fr;
+  gap: 10px;
+  align-items: start;
+}
+.form-label {
+  text-align: right;
+  padding-top: 3px;
+  color: var(--text);
+}
+.form-control {
+  display: grid;
+  gap: 7px;
+  justify-items: start;
+  min-width: 0;
+}
+.form-note {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+  max-width: 330px;
+}
+.form-note.error {
+  color: var(--danger-text);
+}
+.inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.inline .value {
+  min-width: 44px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.status-ok::before {
+  content: "✓ ";
+  color: var(--success-text);
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.radio-group {
+  display: grid;
+  gap: 5px;
+}
+.settings input[type="checkbox"],
+.settings input[type="radio"],
+.settings input[type="range"] {
+  accent-color: var(--accent);
+  margin: 0;
+}
+.settings select {
+  font: 13px var(--font-ui);
+  min-width: 170px;
+}
+.settings input[type="range"] {
+  width: 180px;
+}
+.form-note code {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: var(--recessed);
+  color: var(--text-secondary);
+}

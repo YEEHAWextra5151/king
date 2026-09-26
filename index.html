@@ -2,11 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tauri + React + Typescript</title>
+    <meta name="color-scheme" content="light dark" />
+    <title>Folio</title>
+    <!--
+      Critical CSS: the surface color for the very first frame, before the
+      stylesheets load. The window is also created with this color natively
+      and stays hidden until the document has painted.
+    -->
+    <style>
+      html, body { margin: 0; height: 100%; background: #faf9f5; color-scheme: light dark; }
+      @media (prefers-color-scheme: dark) { html, body { background: #262624; } }
+      html[data-theme="github"], html[data-theme="github"] body,
+      html[data-theme="paper"], html[data-theme="paper"] body { background: #ffffff; }
+      @media (prefers-color-scheme: dark) {
+        html[data-theme="github"], html[data-theme="github"] body { background: #0d1117; }
+        html[data-theme="paper"], html[data-theme="paper"] body { background: #000000; }
+      }
+      #root { height: 100%; }
+    </style>
   </head>
-
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

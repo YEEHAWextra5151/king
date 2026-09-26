@@ -1,0 +1,178 @@
+#!/bin/sh
+# folio — open Markdown files and folders in Folio from the command line.
+#
+# Installed by Folio ▸ Install Command Line Tool… as a symlink to this file
+# inside Folio.app. Plain paths go through `open -b`, exactly like a Finder
+# double-click; options travel in a folio://open link, which Folio treats as
+# untrusted input (it opens existing Markdown files and folders, nothing else).
+
+set -u
+
+BUNDLE_ID="dev.yourname.folio"
+VERSION="0.1.0"
+
+usage() {
+	cat <<'EOF'
+Usage: folio [options] [file or folder …]
+
+Opens Markdown files and folders in Folio.
+
+  folio README.md docs/*.md    open files, each in a tab
+  folio .                      open a folder (and its README) in the sidebar
+  cat notes.md | folio -       show standard input
+  folio                        bring Folio to the front
+
+Options:
+  --code             open in Code view
+  --split            open in Split view (Code and Preview side by side)
+  --preview          open in Preview (the default)
+  --line N, -l N     scroll to line N
+  --new-window, -n   open in a new window instead of the frontmost one
+  -h, --help         show this help
+  -v, --version      show the version
+EOF
+}
+
+die() {
+	printf 'folio: %s\n' "$1" >&2
+	exit "${2:-1}"
+}
+
+# Percent-encodes one query value, byte by byte ("/" stays readable).
+urlencode() {
+	LC_ALL=C
+	export LC_ALL
+	rest=$1
+	out=
+	while [ -n "$rest" ]; do
+		tail=${rest#?}
+		c=${rest%"$tail"}
+		rest=$tail
+		case $c in
+		[A-Za-z0-9._~/-]) out=$out$c ;;
+		*)
+			hex=$(printf '%02X' "'$c")
+			# Some shells report bytes above 0x7F as negative numbers.
+			hex=${hex#FFFFFFFFFFFFFF}
+			hex=${hex#FFFFFF}
+			out=$out%$hex
+			;;
+		esac
+	done
+	printf '%s' "$out"
+}
+
+is_markdown() {
+	case $(printf '%s' "$1" | tr '[:upper:]' '[:lower:]') in
+	*.md | *.markdown | *.mdown | *.mkd | *.mkdn | *.mdwn | *.mdtxt | *.mdtext) return 0 ;;
+	*) return 1 ;;
+	esac
+}
+
+view=
+line=
+new_window=0
+stdin=0
+options_done=0
+missing=0
+
+# Rotate the arguments: options are consumed, paths are appended (absolute).
+count=$#
+while [ "$count" -gt 0 ]; do
+	arg=$1
+	shift
+	count=$((count - 1))
+	if [ "$options_done" -eq 0 ]; then
+		case $arg in
+		-h | --help)
+			usage
+			exit 0
+			;;
+		-v | --version)
+			printf 'folio %s\n' "$VERSION"
+			exit 0
+			;;
+		--code) view=code; continue ;;
+		--split) view=split; continue ;;
+		--preview) view=preview; continue ;;
+		-n | --new-window) new_window=1; continue ;;
+		-l | --line)
+			[ "$count" -gt 0 ] || die "$arg needs a line number" 2
+			line=$1
+			shift
+			count=$((count - 1))
+			continue
+			;;
+		--line=*) line=${arg#--line=}; continue ;;
+		--) options_done=1; continue ;;
+		-) stdin=1; continue ;;
+		-*) die "unknown option: $arg (see folio --help)" 2 ;;
+		esac
+	fi
+	case $arg in
+	/*) path=$arg ;;
+	*) path=$PWD/$arg ;;
+	esac
+	case $path in
+	*/.) path=${path%/.} ;;
+	esac
+	[ -n "$path" ] || path=/
+	if [ ! -e "$path" ]; then
+		printf 'folio: no such file or folder: %s\n' "$arg" >&2
+		missing=1
+		continue
+	fi
+	set -- "$@" "$path"
+done
+
+if [ -n "$line" ]; then
+	case $line in
+	'' | *[!0-9]*) die "--line needs a positive number, not \"$line\"" 2 ;;
+	esac
+	[ "$line" -ge 1 ] || die "--line needs a positive number" 2
+fi
+
+# Standard Input becomes a temporary file that Folio shows as "Standard
+# Input", keeps out of Recents, and deletes on its next launch.
+if [ "$stdin" -eq 1 ]; then
+	[ -t 0 ] && die "nothing to read: pipe Markdown into 'folio -'" 2
+	tmp=${TMPDIR:-/tmp}
+	dir=${tmp%/}/$BUNDLE_ID/stdin
+	mkdir -p "$dir" || die "couldn't create $dir"
+	base=$(mktemp "$dir/stdin-XXXXXXXX") || die "couldn't create a temporary file"
+	file=$base.md
+	mv "$base" "$file" || die "couldn't create a temporary file"
+	cat >"$file" || die "couldn't read standard input"
+	set -- "$@" "$file"
+fi
+
+if [ $# -eq 0 ]; then
+	[ "$missing" -eq 1 ] && exit 1
+	[ "$new_window" -eq 1 ] && die "--new-window needs a file or folder to open" 2
+	{ [ -n "$view" ] || [ -n "$line" ]; } && die "--code, --split, --preview and --line need a file to open" 2
+	open -b "$BUNDLE_ID" || die "Folio isn't installed (bundle $BUNDLE_ID)"
+	exit 0
+fi
+
+if [ -z "$view" ] && [ -z "$line" ] && [ "$new_window" -eq 0 ] && [ "$stdin" -eq 0 ]; then
+	open -b "$BUNDLE_ID" "$@" || die "Folio isn't installed (bundle $BUNDLE_ID)"
+	exit "$missing"
+fi
+
+# Options: one folio://open link for the Markdown files and folders; any
+# other files open plainly (options don't apply to them).
+query=
+for path in "$@"; do
+	if [ -d "$path" ] || is_markdown "$path"; then
+		query=$query${query:+&}path=$(urlencode "$path")
+	else
+		open -b "$BUNDLE_ID" "$path" || die "Folio isn't installed (bundle $BUNDLE_ID)"
+	fi
+done
+[ -n "$query" ] || exit "$missing"
+[ -n "$view" ] && query=$query\&view=$view
+[ -n "$line" ] && query=$query\&line=$line
+[ "$new_window" -eq 1 ] && query=$query\&window=new
+[ "$stdin" -eq 1 ] && query=$query\&stdin=1
+open -b "$BUNDLE_ID" "folio://open?$query" || die "Folio isn't installed (bundle $BUNDLE_ID)"
+exit "$missing"

@@ -1152,12 +1152,15 @@ checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 name = "folio"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "block2",
  "dunce",
  "encoding_rs",
  "ignore",
+ "imagesize",
  "libc",
  "log",
+ "muda",
  "notify",
  "notify-debouncer-full",
  "objc2",
@@ -1913,6 +1916,12 @@ dependencies = [
  "walkdir",
  "winapi-util",
 ]
+
+[[package]]
+name = "imagesize"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65b27460c2c92b037f3f94c538ed9a3342f3fdf923606781629ccb35f82d042a"
 
 [[package]]
 name = "indexmap"
