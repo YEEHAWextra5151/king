@@ -41,6 +41,7 @@ const BADGE = `<svg xmlns="http://www.w3.org/2000/svg" width="90" height="20"><r
 
 const mockSource = await readFile(join(here, "mock-tauri.js"), "utf8");
 const { files, images } = await fixtureFiles();
+files[ROOT + "/help.md"] = await readFile(join(here, "..", "src-tauri", "resources", "help.md"), "utf8");
 const server = await serve();
 const base = `http://127.0.0.1:${server.address().port}/`;
 const browser = await chromium.launch({ executablePath: EXECUTABLE, args: ["--font-render-hinting=none"] });
@@ -64,8 +65,20 @@ async function open(scenario, { colorScheme = "light", width = 920, height = 820
   const remote = [];
   await context.route(
     (url) => url.hostname !== "127.0.0.1",
-    (route) => {
-      remote.push(route.request().url());
+    async (route) => {
+      const url = new URL(route.request().url());
+      if (url.hostname === "asset.localhost") {
+        // Granted local files, as Tauri's asset protocol serves them.
+        const path = decodeURIComponent(url.pathname.slice(1));
+        if (!path.startsWith(ROOT + "/")) return route.fulfill({ status: 403 });
+        try {
+          const body = await readFile(join(FIXTURES, path.slice(ROOT.length + 1)));
+          return route.fulfill({ status: 200, contentType: path.endsWith(".svg") ? "image/svg+xml" : "application/octet-stream", body });
+        } catch {
+          return route.fulfill({ status: 404 });
+        }
+      }
+      remote.push(url.href);
       return route.fulfill({ status: 200, contentType: "image/svg+xml", body: BADGE });
     },
   );
@@ -156,8 +169,10 @@ const scenarios = {
     check("readme: katex", await page.$(".katex"));
     check("readme: mermaid", await page.$(".mermaid-diagram svg"));
     check("readme: highlighted code", await page.$('.code-block pre:not(.plain) span[style*="--shiki-token"]'));
-    check("readme: local image", await page.$('img[src^="/__fixtures__/docs/images/layout.svg"]'));
-    check("readme: image size reserved", await page.$('img[src^="/__fixtures__/docs/images/layout.svg"][width="640"][height="220"]'));
+    const localImage = `img[src="http://asset.localhost/${encodeURIComponent(doc("docs/images/layout.svg"))}"]`;
+    check("readme: local image", await page.$(localImage));
+    check("readme: local image loaded", await page.$eval(localImage, (img) => img.complete && img.naturalWidth > 0));
+    check("readme: image size reserved", await page.$(`${localImage}[width="640"][height="220"]`));
     check("readme: remote badge requested", s.remote.some((u) => u.includes("img.shields.io")));
     check("readme: footnote", await page.$("section.footnotes[data-footnotes] li"));
     check("readme: tab title", (await activeTitle(page))?.includes("README.md"));
@@ -170,6 +185,15 @@ const scenarios = {
     await page.hover(".code-block");
     await page.click(".code-block .code-copy");
     check("readme: copy code", (await page.evaluate(() => window.__mock.clipboard))?.includes("pnpm install"));
+
+    // Export ▸ HTML: one self-contained file.
+    await menu(page, "export_html");
+    await page.waitForFunction(() => window.__mock.exported, null, { timeout: 10000 });
+    const exported = await page.evaluate(() => window.__mock.exported);
+    check("readme: export name", exported.suggestedName === "README.html", exported.suggestedName);
+    check("readme: export has no app or asset URLs", !/asset:|asset\.localhost|data-source-line|folio-slot/.test(exported.html));
+    check("readme: export inlines images and math fonts", exported.html.includes("data:image/svg+xml") && /url\(["']?data:font\/woff2/.test(exported.html));
+    check("readme: export keeps rendering", /class="katex"/.test(exported.html) && exported.html.includes("markdown-alert-note") && exported.html.includes("<svg"));
 
     // In-document anchor link, then Back.
     await page.click('a[href="#installation"]');
@@ -777,6 +801,20 @@ const scenarios = {
       }
       await s.finish(`settings ${scheme}`);
     }
+  },
+
+  async help() {
+    const s = await open({ pending: [doc("help.md")] });
+    const { page } = s;
+    await waitRendered(page);
+    await page.waitForTimeout(800);
+    check("help: renders tables and alerts", (await page.$$(`${activeBody} table`)).length >= 3 && (await page.$(`${activeBody} .markdown-alert-tip`)));
+    check("help: math and emoji", (await page.$(`${activeBody} .katex`)) && (await page.textContent(activeBody)).includes("✨"));
+    await shot(page, "help");
+    await page.evaluate((sel) => document.querySelector(sel).scrollTo(0, 2400), activeScroller);
+    await frames(page);
+    await shot(page, "help-scrolled");
+    await s.finish("help");
   },
 
   async zoom() {

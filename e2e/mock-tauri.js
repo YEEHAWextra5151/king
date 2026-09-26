@@ -172,7 +172,7 @@
       }
       return out;
     },
-    image_data_urls: () => ({}),
+    image_data_urls: ({ paths }) => Object.fromEntries(paths.map((p) => [p, "data:image/svg+xml;base64,PHN2Zy8+"])),
     list_folder: ({ root }) => tree(root),
     open_granted: ({ path, newWindow, view }) => {
       pending.push(request(path, { view }));
@@ -200,7 +200,10 @@
     },
     popup_path_menu: () => null,
     print_window: () => null,
-    export_html: () => null,
+    export_html: ({ html, suggestedName }) => {
+      window.__mock.exported = { html, suggestedName };
+      return "/Users/reader/Desktop/" + suggestedName;
+    },
     copy_to_clipboard: ({ text }) => {
       window.__mock.clipboard = text;
       return null;
@@ -282,7 +285,8 @@
     unregisterCallback: (id) => callbacks.delete(id),
     runCallback: (id, data) => callbacks.get(id) && callbacks.get(id)(data),
     callbacks,
-    convertFileSrc: (path) => "/__fixtures__" + (path.startsWith(ROOT) ? path.slice(ROOT.length) : path),
+    // Tauri's Windows-style asset URL (the harness routes it to the fixtures).
+    convertFileSrc: (path, protocol) => `http://${protocol || "asset"}.localhost/${encodeURIComponent(path)}`,
     metadata: {
       currentWindow: { label: scenario.label },
       currentWebview: { windowLabel: scenario.label, label: scenario.label },

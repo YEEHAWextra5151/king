@@ -136,7 +136,9 @@ export function lineAtOffset(entries: LineEntry[], scroller: HTMLElement, y: num
   let best = -1;
   while (lo <= hi) {
     const mid = (lo + hi) >> 1;
-    if (topOf(entries[mid].el, scroller) <= y) {
+    // 1px of slack: scrollTop is rounded, so a block scrolled exactly to the
+    // top can sit a fraction of a pixel below it.
+    if (topOf(entries[mid].el, scroller) <= y + 1) {
       best = mid;
       lo = mid + 1;
     } else {

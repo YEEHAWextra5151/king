@@ -1,5 +1,6 @@
-// Minimal static server for e2e runs: the production bundle (dist/) plus
-// fixture files under /__fixtures__/.
+// Minimal static server for e2e runs: the production bundle (dist/), sent
+// with the production CSP. (Fixture images are served by the harness as
+// http://asset.localhost/…, like Tauri's asset protocol.)
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
@@ -12,7 +13,6 @@ const CONF = JSON.parse(await readFile(join(here, "..", "src-tauri", "tauri.conf
 export const CSP = Object.entries(CONF.app.security.csp)
   .map(([directive, sources]) => `${directive} ${sources}`)
   .join("; ");
-const FIXTURES = join(here, "fixtures", "project");
 const TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript",
@@ -32,11 +32,7 @@ export function serve(port = 0) {
     try {
       const url = new URL(req.url, "http://localhost");
       let path = decodeURIComponent(url.pathname);
-      let base = DIST;
-      if (path.startsWith("/__fixtures__/")) {
-        base = FIXTURES;
-        path = path.slice("/__fixtures__".length);
-      }
+      const base = DIST;
       if (path === "/favicon.ico") {
         // Browsers ask for one; WebKit in Tauri does not.
         res.writeHead(204);

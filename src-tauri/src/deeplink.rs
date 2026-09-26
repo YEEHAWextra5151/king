@@ -126,6 +126,54 @@ mod tests {
         assert!(parse(&url("folio://open?line=3")).is_none());
     }
 
+    /// The `folio` command builds links this parser must round-trip,
+    /// including spaces, `&` and non-ASCII names.
+    #[cfg(unix)]
+    #[test]
+    fn cli_links_round_trip() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let root = paths::canonical(dir.path()).unwrap();
+        let docs = root.join("My Docs");
+        std::fs::create_dir(&docs).unwrap();
+        let md = docs.join("Ünïcode & more #1.md");
+        std::fs::write(&md, "# x").unwrap();
+        // A stand-in for macOS `open` that records its arguments.
+        let bin = root.join("bin");
+        std::fs::create_dir(&bin).unwrap();
+        let stub = bin.join("open");
+        std::fs::write(&stub, "#!/bin/sh\nfor a in \"$@\"; do printf '%s\\n' \"$a\"; done > \"$OUT\"\n").unwrap();
+        std::fs::set_permissions(&stub, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let out = root.join("args.txt");
+        let script = Path::new(env!("CARGO_MANIFEST_DIR")).join("resources/bin/folio");
+        let status = std::process::Command::new("sh")
+            .arg(&script)
+            .args(["--split", "--line", "7", "My Docs/Ünïcode & more #1.md", "."])
+            .current_dir(&root)
+            .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
+            .env("OUT", &out)
+            .status()
+            .unwrap();
+        assert!(status.success());
+        let args = std::fs::read_to_string(&out).unwrap();
+        let link = args.lines().last().unwrap();
+        assert!(link.starts_with("folio://open?"), "{args}");
+        let parsed = parse(&url(link)).unwrap();
+        assert_eq!(parsed.paths, vec![md, root.clone()]);
+        assert_eq!(parsed.view, Some(ViewMode::Split));
+        assert_eq!(parsed.line, Some(7));
+    }
+
+    #[test]
+    fn cli_version_matches_the_app() {
+        let script = include_str!("../resources/bin/folio");
+        let conf: serde_json::Value = serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
+        let version = conf["version"].as_str().unwrap();
+        assert!(script.contains(&format!("VERSION=\"{version}\"")), "update VERSION in resources/bin/folio");
+        let id = conf["identifier"].as_str().unwrap();
+        assert!(script.contains(&format!("BUNDLE_ID=\"{id}\"")));
+    }
+
     #[test]
     fn stdin_flag_requires_temp_dir() {
         let dir = tempfile::tempdir().unwrap();
