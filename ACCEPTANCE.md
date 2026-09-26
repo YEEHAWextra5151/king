@@ -128,7 +128,7 @@ Legend: ✅ verified · 🍎 implemented, needs a Mac to verify · ⚠️ partia
 | Code blocks: label + copy on hover | ✅ | e2e `readme` (copy). |
 | Tables, image zoom, custom checkboxes | ✅ | Screenshots; image zoom overlay. |
 | GitHub and Paper themes | ✅ | e2e `themes` (light and dark each, live switch). |
-| Custom CSS themes from `~/Library/Application Support/Folio/themes`, hot-reloaded | ✅ 🍎 | `themes.rs` watcher; the folder path is macOS's. |
+| Custom CSS themes from `~/Library/Application Support/Folio/themes`, hot-reloaded | ✅ | Real app: a `custom:` theme applied at launch, and editing its CSS restyled the open document within 2 s (Linux keeps the folder under `~/.local/share/Folio/themes`). |
 | Increase Contrast, Reduce Motion | ✅ | `prefers-contrast: more` tokens; e2e `reload` (no tint animation under Reduce Motion). |
 
 ## 7 · Rendering
