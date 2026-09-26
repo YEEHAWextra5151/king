@@ -13,7 +13,8 @@ const here = fileURLToPath(new URL(".", import.meta.url));
 const OUT = join(here, "..", "test-results", "e2e");
 const FIXTURES = join(here, "fixtures", "project");
 const ROOT = "/Users/reader/Projects/sample";
-const EXECUTABLE = process.env.CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
+// $CHROMIUM, else Playwright's own Chromium (`npx playwright install chromium`).
+const EXECUTABLE = process.env.CHROMIUM || undefined;
 
 async function walk(dir) {
   const out = [];

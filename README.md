@@ -130,9 +130,10 @@ $ scripts/measure-launch.sh          # on a Mac: launch budgets, from the app's 
 ```
 
 The e2e suite drives the real frontend bundle with the production CSP and a
-mocked Tauri runtime (in-memory files, events you can fire), checks 170+
-behaviors, and saves screenshots to `test-results/e2e/`. It needs Chromium;
-set `CHROMIUM=/path/to/chrome` if it isn't at Playwright's default location.
+mocked Tauri runtime (in-memory files, events you can fire), checks 180
+behaviors, and saves screenshots to `test-results/e2e/`. It uses
+Playwright's Chromium (`npx playwright install chromium`), or any Chromium
+given as `CHROMIUM=/path/to/chrome`.
 
 ## Custom themes
 

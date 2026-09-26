@@ -10,7 +10,7 @@ import { serve } from "./serve.mjs";
 const RUNS = Number(process.argv[2] ?? 7);
 const server = await serve();
 const base = `http://127.0.0.1:${server.address().port}/`;
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" });
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined });
 const mock = await readFile(new URL("./mock-tauri.js", import.meta.url), "utf8");
 const readme = await readFile(new URL("./fixtures/project/README.md", import.meta.url), "utf8");
 
