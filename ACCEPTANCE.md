@@ -7,7 +7,7 @@ type-checks for both Apple targets (`scripts/check-macos.sh`), but it hasn't
 run. Everything else was exercised in three ways:
 
 - **Unit tests** — `pnpm test` (39 Vitest tests: rendering, heading ids,
-  sanitizer, regex cache, paths, fuzzy matching) and `cargo test` (56 Rust
+  sanitizer, regex cache, paths, fuzzy matching) and `cargo test` (57 Rust
   tests: decoding, access policy, link resolution, deep links, the `folio`
   script, sessions, registry, watcher classification, menus).
 - **e2e** — `node e2e/run.mjs`: the production bundle in Chromium with the
